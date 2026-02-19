@@ -80,9 +80,9 @@ Open the frontend: http://localhost:8000/ui
 
 Available API endpoints:
 
-- `GET /` — health check
-- `GET /config-status` — shows whether `OPENAI_API_KEY` and X credentials are configured
-- `GET /ui` — serves the frontend (`index.html`)
+- `GET /` — serves the frontend UI (index.html)
+- `GET /health` — health check JSON response
+- `GET /health/config-status` — shows whether `OPENAI_API_KEY` and X credentials are configured
 - `POST /trigger-claw?url=<url>` — run analysis on a product URL (returns `{ result: ... }`)
 - `POST /post-to-x` — post text to X (JSON body: `{ "text": "...", "in_reply_to": null, "reply_to_username": null }`)
 

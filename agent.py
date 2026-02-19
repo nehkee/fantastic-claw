@@ -36,10 +36,9 @@ app.add_middleware(
 )
 
 # Serve frontend static file(s)
-# Mount the project root so `index.html` is available at /ui
 app.mount("/static", StaticFiles(directory="."), name="static")
 
-@app.get("/ui")
+@app.get("/")
 def get_ui():
     return FileResponse("index.html")
 
@@ -169,12 +168,12 @@ def local_analyze(url: str) -> str:
     return f"{scraped}\nMarket ({category}): ${market}. {verdict}"
 
 # 3. REST API Endpoints
-@app.get("/")
+@app.get("/health")
 def health_check():
     return {"status": "The Fantastic Claw is awake and listening on X!", "version": "1.0.0"}
 
 
-@app.get("/config-status")
+@app.get("/health/config-status")
 def config_status():
     """Return whether key environment variables are present."""
     openai_set = bool(os.getenv("OPENAI_API_KEY"))
