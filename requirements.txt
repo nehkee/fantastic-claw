@@ -1,0 +1,20 @@
+# Core LangChain and LangGraph
+langchain>=0.1.0
+langgraph>=0.0.1
+langchain-core>=0.1.0
+
+# LLM Providers (uncomment the one(s) you need)
+openai>=1.0.0
+# anthropic>=0.7.0
+# google-generativeai>=0.3.0
+
+# Web Scraping
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# Optional: For additional integrations
+# langchain-community>=0.0.1
