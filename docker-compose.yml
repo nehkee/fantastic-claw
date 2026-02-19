@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: langchain-agent
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./.env:/app/.env:ro
+    stdin_open: true
+    tty: true
+    command: uvicorn agent:app --host 0.0.0.0 --port 8000
+
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: langchain-agent-demo
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PYTHONUNBUFFERED=1
+    command: python demo.py

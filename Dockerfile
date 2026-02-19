@@ -34,6 +34,7 @@ ENV PATH=/root/.local/bin:$PATH \
 # Copy application files
 COPY agent.py .
 COPY demo.py .
+COPY index.html .
 COPY requirements.txt .
 
 # Create .env file location (user should mount or pass via environment)
@@ -43,5 +44,5 @@ RUN mkdir -p /app/config
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# Default command (runs demo - can be overridden)
-CMD ["python", "demo.py"]
+# Default command: run the FastAPI app with Uvicorn
+CMD ["uvicorn", "agent:app", "--host", "0.0.0.0", "--port", "8000"]

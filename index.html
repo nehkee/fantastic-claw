@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Fantastic Claw — Deal Finder</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#ff7a18; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+      --success:#18c78b; --danger:#ff6b6b; --maxw:980px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;}
+    body{margin:0;background:linear-gradient(180deg,var(--bg) 0%, #071024 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:32px}
+    .wrap{width:100%;max-width:var(--maxw);}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+    .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff3d81);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#061421}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 30px rgba(2,6,23,0.6);}
+    .form-row{display:flex;gap:8px;margin-top:12px}
+    input.url{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;outline:none}
+    button.primary{background:linear-gradient(90deg,var(--accent),#ff3d81);border:none;color:#061421;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer}
+
+    .status{margin-top:12px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+    .results{margin-top:14px}
+    pre.output{white-space:pre-wrap;background:#071827;padding:12px;border-radius:8px;color:#dcedff;border:1px solid rgba(255,255,255,0.02);}
+
+    .actions{display:flex;gap:8px;margin-top:10px}
+    .history{margin-top:16px}
+    .hist-item{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:10px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;gap:12px}
+    .hist-left{flex:1}
+    .muted{color:var(--muted);font-size:13px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+
+    @media (max-width:600px){.form-row{flex-direction:column}.actions{flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">🦀</div>
+      <div>
+        <h1>The Fantastic Claw</h1>
+        <p class="lead">Paste a product link, tag the bot on X, or use the API — find flips and underpriced deals instantly.</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="flex:1">
+          <div style="font-weight:700">Quick Scan</div>
+          <div class="muted">Enter a product URL to analyze its flip potential</div>
+        </div>
+        <div style="text-align:right;color:var(--muted);font-size:13px">Status: <span id="app-status">checking…</span></div>
+      </div>
+
+      <div class="form-row">
+        <input id="url-input" class="url" placeholder="https://example.com/vintage-chair" />
+        <button id="analyze-btn" class="primary">Analyze</button>
+        <button id="demo-btn" class="ghost">Run Demo</button>
+      </div>
+
+      <div class="status" id="status-line">
+        <div id="spinner" style="display:inline-block;"> </div>
+        <div id="status-text"></div>
+      </div>
+
+      <div class="results">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-weight:700">Analysis Output</div>
+          <div class="muted">Powered by LangChain • GPT-4o</div>
+        </div>
+        <pre id="output" class="output">No analysis yet — try a URL above.</pre>
+
+        <div class="actions">
+          <button id="copy-btn" class="ghost">Copy</button>
+          <button id="tweet-btn" class="ghost">Share on X</button>
+          <button id="download-btn" class="ghost">Download JSON</button>
+          <button id="clear-btn" class="ghost">Clear</button>
+        </div>
+
+        <div class="history">
+          <div style="font-weight:700;margin-bottom:8px">Recent Scans</div>
+          <div id="history-list"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <footer>
+      <div>Deploy the backend on Render and place this file as your static site or serve via FastAPI static files.</div>
+    </footer>
+  </div>
+
+  <script>
+    const api = {
+      health: '/',
+      trigger: '/trigger-claw'
+    }
+
+    const $status = document.getElementById('app-status')
+    const $statusText = document.getElementById('status-text')
+    const $output = document.getElementById('output')
+    const $url = document.getElementById('url-input')
+    const $analyze = document.getElementById('analyze-btn')
+    const $demo = document.getElementById('demo-btn')
+    const $copy = document.getElementById('copy-btn')
+    const $tweet = document.getElementById('tweet-btn')
+    const $download = document.getElementById('download-btn')
+    const $clear = document.getElementById('clear-btn')
+    const $history = document.getElementById('history-list')
+
+    let busy = false
+
+    async function checkHealth(){
+      try{
+        const res = await fetch(api.health)
+        if(!res.ok) throw new Error('unhealthy')
+        const body = await res.json()
+        $status.textContent = body.status || 'ready'
+        $status.style.color = 'var(--success)'
+      }catch(e){
+        $status.textContent = 'offline'
+        $status.style.color = 'var(--danger)'
+      }
+    }
+
+    function setBusy(t){ busy = t; $analyze.disabled = t; $demo.disabled = t; $statusText.textContent = t? 'working…' : '' }
+
+    function renderOutput(text){
+      $output.textContent = text
+    }
+
+    function pushHistory(item){
+      const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
+      items.unshift(item)
+      if(items.length>10) items.pop()
+      localStorage.setItem('fc_history', JSON.stringify(items))
+      renderHistory()
+    }
+
+    function renderHistory(){
+      const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
+      $history.innerHTML = ''
+      items.forEach((it, idx)=>{
+        const div = document.createElement('div')
+        div.className = 'hist-item'
+        div.innerHTML = `<div class='hist-left'><div style='font-weight:700'>${it.url}</div><div class='muted'>${new Date(it.at).toLocaleString()}</div></div><div style='text-align:right'><button class='ghost' data-idx='${idx}'>Load</button></div>`
+        $history.appendChild(div)
+      })
+      // attach handlers
+      $history.querySelectorAll('button').forEach(btn=>btn.addEventListener('click', (e)=>{
+        const idx = e.currentTarget.dataset.idx
+        const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
+        const it = items[idx]
+        if(it){ $url.value = it.url; renderOutput(it.result) }
+      }))
+    }
+
+    async function analyze(url){
+      if(!url) return alert('Please enter a URL')
+      setBusy(true)
+      $statusText.textContent = 'Calling agent...'
+      try{
+        const res = await fetch(api.trigger + '?url=' + encodeURIComponent(url), {method:'POST'})
+        if(!res.ok){ const t=await res.text(); throw new Error(t||'request failed') }
+        const data = await res.json()
+        const result = (data.result || data.output || JSON.stringify(data))
+        renderOutput(result)
+        pushHistory({url, result, at: Date.now()})
+        $statusText.textContent = 'Done'
+      }catch(err){
+        console.error(err)
+        renderOutput('Error: '+ (err.message||err))
+        $statusText.textContent = 'Error'
+      }finally{ setBusy(false) }
+    }
+
+    $analyze.addEventListener('click', ()=>analyze($url.value.trim()))
+    $demo.addEventListener('click', ()=>{
+      // quick demo urls that map to demo.py behavior
+      const demoUrl = 'https://marketplace.com/laptop-dell-xps-13'
+      $url.value = demoUrl
+      analyze(demoUrl)
+    })
+
+    $copy.addEventListener('click', ()=>{
+      navigator.clipboard.writeText($output.textContent).then(()=>alert('Copied'))
+    })
+
+    $tweet.addEventListener('click', ()=>{
+      // open X compose with prefilled text
+      const text = encodeURIComponent($output.textContent.substring(0,240))
+      const url = `https://x.com/intent/tweet?text=${text}`
+      window.open(url, '_blank')
+    })
+
+    $download.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify({url:$url.value,result:$output.textContent,at:new Date().toISOString()},null,2)],{type:'application/json'})
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'fantastic-claw-result.json'
+      document.body.appendChild(a); a.click(); a.remove()
+    })
+
+    $clear.addEventListener('click', ()=>{ $output.textContent='No analysis yet — try a URL above.' })
+
+    // init
+    checkHealth(); renderHistory();
+  </script>
+</body>
+</html>
