@@ -97,10 +97,20 @@ def scrape_listing(url: str) -> str:
         return f"Error scraping URL: {str(e)}"
 
 # 2. Configure the Agent
-llm = ChatOpenAI(
+primary_llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
-    model="meta-llama/llama-3.3-70b-instruct:free" 
+    model="google/gemini-2.0-flash-exp:free"
+)
+
+backup_llm = ChatOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    model="mistralai/mistral-small-3.1-24b-instruct:free"
+)
+
+# Combine them so LangChain knows to use the backup if needed
+llm = primary_llm.with_fallbacks([backup_llm])
 )
 tools = [scrape_listing]
 prompt = ChatPromptTemplate.from_messages([
