@@ -79,11 +79,13 @@ def initialize_demo_agent():
             "Please create .env from .env.example and add your API key."
         )
     
-    llm = ChatOpenAI(
-        model="gpt-4o",
-        temperature=0,
-        api_key=api_key
-    )
+    api_key = os.getenv("OPENROUTER_API_KEY")
+  llm = ChatOpenAI(
+      base_url="https://openrouter.ai/api/v1",
+      model="meta-llama/llama-3.3-70b-instruct:free",
+      temperature=0,
+      api_key=api_key
+  )
     
     tools = [scrape_listing]
     
