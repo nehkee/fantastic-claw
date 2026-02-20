@@ -111,7 +111,7 @@ backup_llm = ChatOpenAI(
 
 # Combine them so LangChain knows to use the backup if needed
 llm = primary_llm.with_fallbacks([backup_llm])
-)
+
 tools = [scrape_listing]
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are The Fantastic Claw on X, a bot that analyzes product listings. Keep responses concise (280 chars). Analyze if it's a good flip/deal and be witty!"),
