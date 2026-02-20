@@ -97,7 +97,11 @@ def scrape_listing(url: str) -> str:
         return f"Error scraping URL: {str(e)}"
 
 # 2. Configure the Agent
-llm = ChatOpenAI(model="gpt-4o")
+llm = ChatOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    model="meta-llama/llama-3.3-70b-instruct:free" 
+)
 tools = [scrape_listing]
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are The Fantastic Claw on X, a bot that analyzes product listings. Keep responses concise (280 chars). Analyze if it's a good flip/deal and be witty!"),
