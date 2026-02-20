@@ -100,7 +100,7 @@ def scrape_listing(url: str) -> str:
 primary_llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
-    model="google/gemini-2.0-flash-exp:free"
+    model="meta-llama/llama-3.1-8b-instruct:free"
 )
 
 backup_llm = ChatOpenAI(
