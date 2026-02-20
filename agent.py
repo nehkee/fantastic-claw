@@ -97,27 +97,24 @@ def scrape_listing(url: str) -> str:
         return f"Error scraping URL: {str(e)}"
 
 # 2. Configure the Agent
-primary_llm = ChatOpenAI(
+# 1. Define the LLM engine
+llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
-    model="meta-llama/llama-3.1-8b-instruct:free"
+    model="openrouter/free"
 )
 
-backup_llm = ChatOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    model="mistralai/mistral-small-3.1-24b-instruct:free"
-)
-
-# Combine them so LangChain knows to use the backup if needed
-llm = primary_llm.with_fallbacks([backup_llm])
-
+# 2. Define the tools the agent can use
 tools = [scrape_listing]
+
+# 3. Define the instructions (prompt)
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are The Fantastic Claw on X, a bot that analyzes product listings. Keep responses concise (280 chars). Analyze if it's a good flip/deal and be witty!"),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
+
+# 4. Build the agent and the executor
 agent = create_tool_calling_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
