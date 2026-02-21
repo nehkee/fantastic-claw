@@ -5,104 +5,156 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Fantastic Claw — Deal Finder</title>
   <style>
-    :root{
-      --bg:#0f1724; --card:#0b1220; --accent:#ff7a18; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
-      --success:#18c78b; --danger:#ff6b6b; --maxw:980px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    :root {
+      --bg: #0f1724; 
+      --card: #131c2c; 
+      --accent: #ff7a18; 
+      --accent-grad: linear-gradient(135deg, #ff7a18, #ff3d81);
+      --muted: #94a3b8; 
+      --glass: rgba(255, 255, 255, 0.04);
+      --glass-hover: rgba(255, 255, 255, 0.08);
+      --success: #18c78b; 
+      --danger: #ff6b6b; 
+      --maxw: 800px; /* Slightly narrower for better readability */
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    html,body{height:100%;}
-    body{margin:0;background:linear-gradient(180deg,var(--bg) 0%, #071024 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:32px}
-    .wrap{width:100%;max-width:var(--maxw);}
-    header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
-    .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff3d81);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#061421}
-    h1{margin:0;font-size:20px}
-    p.lead{margin:0;color:var(--muted);font-size:13px}
 
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 30px rgba(2,6,23,0.6);}
-    .form-row{display:flex;gap:8px;margin-top:12px}
-    input.url{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;outline:none}
-    button.primary{background:linear-gradient(90deg,var(--accent),#ff3d81);border:none;color:#061421;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer}
+    /* OVERFLOW FIX: Use min-height and remove align-items: center */
+    * { box-sizing: border-box; }
+    html, body { min-height: 100vh; margin: 0; }
+    body {
+      background: linear-gradient(180deg, var(--bg) 0%, #071024 100%);
+      color: #e6eef8;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
 
-    .status{margin-top:12px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
-    .results{margin-top:14px}
-    pre.output{white-space:pre-wrap;background:#071827;padding:12px;border-radius:8px;color:#dcedff;border:1px solid rgba(255,255,255,0.02);}
+    .wrap { width: 100%; max-width: var(--maxw); display: flex; flex-direction: column; gap: 24px; }
+    
+    /* Header */
+    header { display: flex; align-items: center; gap: 18px; margin-bottom: 8px; }
+    .logo { width: 64px; height: 64px; border-radius: 14px; background: var(--accent-grad); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 24px rgba(255, 122, 24, 0.25); }
+    h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    p.lead { margin: 4px 0 0 0; color: var(--muted); font-size: 14px; max-width: 500px; }
 
-    .actions{display:flex;gap:8px;margin-top:10px}
-    .history{margin-top:16px}
-    .hist-item{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:10px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;gap:12px}
-    .hist-left{flex:1}
-    .muted{color:var(--muted);font-size:13px}
-    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    /* Cards */
+    .card { background: var(--card); border-radius: 16px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.03); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .card-title { font-weight: 700; font-size: 16px; color: #fff; }
+    
+    /* Forms & Inputs */
+    .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    input.url { flex: 1; padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 14px; transition: all 0.2s; }
+    input.url:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.15); }
+    
+    /* Buttons */
+    button { transition: all 0.2s ease; font-family: inherit; font-size: 14px; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+    button.primary { background: var(--accent-grad); border: none; color: #fff; padding: 14px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 61, 129, 0.2); }
+    button.primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 61, 129, 0.3); }
+    button.ghost { background: var(--glass); border: 1px solid rgba(255,255,255,0.05); color: #e6eef8; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+    button.ghost:hover:not(:disabled) { background: var(--glass-hover); }
 
-    @media (max-width:600px){.form-row{flex-direction:column}.actions{flex-wrap:wrap}}
+    /* Status & Spinner */
+    .status-area { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .status-left { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 20px; background: var(--glass); border: 1px solid rgba(255,255,255,0.05); }
+    
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+    .spinner.active { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Output */
+    pre.output { white-space: pre-wrap; background: #07101a; padding: 16px; border-radius: 10px; color: #a5d2ff; border: 1px solid rgba(255,255,255,0.04); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; min-height: 100px; margin: 0 0 16px 0; overflow-x: auto; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* History */
+    .history { margin-top: 10px; }
+    .hist-item { background: var(--glass); border: 1px solid rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.2s; }
+    .hist-item:hover { background: var(--glass-hover); }
+    .hist-url { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; color: #fff; margin-bottom: 4px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    
+    footer { text-align: center; margin-top: 24px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; }
+      .hist-item { flex-direction: column; align-items: flex-start; }
+      .hist-url { max-width: 100%; }
+      button.primary { width: 100%; }
+      .actions button { flex: 1; text-align: center; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
+    
     <header>
       <div class="logo">🦀</div>
       <div>
         <h1>The Fantastic Claw</h1>
-        <p class="lead">Paste a product link, tag the bot on X, or use the API — find flips and underpriced deals instantly.</p>
+        <p class="lead">Analyze product listings, find flips, and uncover underpriced deals instantly.</p>
       </div>
     </header>
 
     <section class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <div style="flex:1">
-          <div style="font-weight:700">Quick Scan</div>
-          <div class="muted">Enter a product URL to analyze its flip potential</div>
+      <div class="card-header">
+        <div>
+          <div class="card-title">Deal Scanner</div>
+          <div class="muted">Paste an Amazon or marketplace URL below</div>
         </div>
-        <div style="text-align:right;color:var(--muted);font-size:13px">Status: <span id="app-status">checking…</span></div>
+        <div class="status-badge" id="app-status">Connecting...</div>
       </div>
 
       <div class="form-row">
-        <input id="url-input" class="url" placeholder="https://example.com/vintage-chair" />
+        <input id="url-input" class="url" placeholder="https://example.com/vintage-chair" autocomplete="off" />
         <button id="analyze-btn" class="primary">Analyze</button>
         <button id="demo-btn" class="ghost">Run Demo</button>
       </div>
 
-      <div class="status" id="status-line">
-        <div id="spinner" style="display:inline-block;"> </div>
-        <div id="status-text"></div>
+      <div class="status-area">
+        <div class="status-left">
+          <div id="spinner" class="spinner"></div>
+          <span id="status-text">Ready to scan.</span>
+        </div>
       </div>
 
-      <div class="results">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-weight:700">Analysis Output</div>
-          <div class="muted">Powered by LangChain • GPT-4o</div>
-        </div>
-        <pre id="output" class="output">No analysis yet — try a URL above.</pre>
+      <div class="card-header" style="margin-bottom: 12px;">
+        <div class="card-title">Analysis Output</div>
+        <div class="muted">Powered by LangChain</div>
+      </div>
+      
+      <pre id="output" class="output">Awaiting instructions...</pre>
 
-        <div class="actions">
-          <button id="copy-btn" class="ghost">Copy</button>
-          <button id="tweet-btn" class="ghost">Share on X</button>
-          <button id="download-btn" class="ghost">Download JSON</button>
-          <button id="clear-btn" class="ghost">Clear</button>
-        </div>
-
-        <div class="history">
-          <div style="font-weight:700;margin-bottom:8px">Recent Scans</div>
-          <div id="history-list"></div>
-        </div>
-
+      <div class="actions">
+        <button id="copy-btn" class="ghost">Copy Results</button>
+        <button id="tweet-btn" class="ghost">Share on X</button>
+        <button id="download-btn" class="ghost">Save JSON</button>
+        <button id="clear-btn" class="ghost" style="margin-left: auto;">Clear</button>
       </div>
     </section>
 
+    <section class="card history" id="history-section" style="display: none;">
+      <div class="card-header">
+        <div class="card-title">Recent Scans</div>
+      </div>
+      <div id="history-list"></div>
+    </section>
+
     <footer>
-      <div>The Fantastic Claw — powered by LangChain, FastAPI, and X integration.</div>
+      The Fantastic Claw • Built with FastAPI & LangChain
     </footer>
+    
   </div>
 
   <script>
-    const api = {
-      health: '/health',
-      trigger: '/trigger-claw'
-    }
+    const api = { health: '/health', trigger: '/trigger-claw' }
 
     const $status = document.getElementById('app-status')
     const $statusText = document.getElementById('status-text')
+    const $spinner = document.getElementById('spinner')
     const $output = document.getElementById('output')
     const $url = document.getElementById('url-input')
     const $analyze = document.getElementById('analyze-btn')
@@ -111,105 +163,165 @@
     const $tweet = document.getElementById('tweet-btn')
     const $download = document.getElementById('download-btn')
     const $clear = document.getElementById('clear-btn')
-    const $history = document.getElementById('history-list')
+    const $historyList = document.getElementById('history-list')
+    const $historySection = document.getElementById('history-section')
 
     let busy = false
 
     async function checkHealth(){
-      try{
+      try {
         const res = await fetch(api.health)
         if(!res.ok) throw new Error('unhealthy')
         const body = await res.json()
-        $status.textContent = body.status || 'ready'
+        $status.innerHTML = `🟢 ${body.status || 'Live'}`
         $status.style.color = 'var(--success)'
-      }catch(e){
-        $status.textContent = 'offline'
+        $status.style.borderColor = 'rgba(24, 199, 139, 0.2)'
+      } catch(e) {
+        $status.innerHTML = '🔴 Offline'
         $status.style.color = 'var(--danger)'
+        $status.style.borderColor = 'rgba(255, 107, 107, 0.2)'
       }
     }
 
-    function setBusy(t){ busy = t; $analyze.disabled = t; $demo.disabled = t; $statusText.textContent = t? 'working…' : '' }
+    function setBusy(isBusy) { 
+      busy = isBusy; 
+      $analyze.disabled = isBusy; 
+      $demo.disabled = isBusy; 
+      
+      if(isBusy) {
+        $spinner.classList.add('active');
+        $statusText.textContent = 'Agent is analyzing the listing...';
+        $statusText.style.color = '#fff';
+      } else {
+        $spinner.classList.remove('active');
+        $statusText.textContent = 'Scan complete.';
+        $statusText.style.color = 'var(--muted)';
+      }
+    }
 
-    function renderOutput(text){
+    function renderOutput(text) {
       $output.textContent = text
     }
 
-    function pushHistory(item){
+    function pushHistory(item) {
       const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
       items.unshift(item)
-      if(items.length>10) items.pop()
+      if(items.length > 5) items.pop() // Keep last 5
       localStorage.setItem('fc_history', JSON.stringify(items))
       renderHistory()
     }
 
-    function renderHistory(){
+    function renderHistory() {
       const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
-      $history.innerHTML = ''
-      items.forEach((it, idx)=>{
+      if (items.length === 0) {
+        $historySection.style.display = 'none';
+        return;
+      }
+      
+      $historySection.style.display = 'block';
+      $historyList.innerHTML = ''
+      
+      items.forEach((it, idx) => {
         const div = document.createElement('div')
         div.className = 'hist-item'
-        div.innerHTML = `<div class='hist-left'><div style='font-weight:700'>${it.url}</div><div class='muted'>${new Date(it.at).toLocaleString()}</div></div><div style='text-align:right'><button class='ghost' data-idx='${idx}'>Load</button></div>`
-        $history.appendChild(div)
+        
+        // Clean up URL for display
+        const displayUrl = it.url.replace(/^https?:\/\//, '').split('?')[0];
+
+        div.innerHTML = `
+          <div style="flex: 1; min-width: 0;">
+            <div class='hist-url' title="${it.url}">${displayUrl}</div>
+            <div class='muted'>${new Date(it.at).toLocaleTimeString()}</div>
+          </div>
+          <div>
+            <button class='ghost' style="padding: 6px 12px; font-size: 12px;" data-idx='${idx}'>Reload</button>
+          </div>
+        `
+        $historyList.appendChild(div)
       })
-      // attach handlers
-      $history.querySelectorAll('button').forEach(btn=>btn.addEventListener('click', (e)=>{
+
+      // Attach handlers
+      $historyList.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
         const idx = e.currentTarget.dataset.idx
         const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
         const it = items[idx]
-        if(it){ $url.value = it.url; renderOutput(it.result) }
+        if(it) { 
+          $url.value = it.url; 
+          renderOutput(it.result);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }))
     }
 
     async function analyze(url){
-      if(!url) return alert('Please enter a URL')
+      if(!url) return alert('Please enter a URL first.')
       setBusy(true)
-      $statusText.textContent = 'Calling agent...'
-      try{
+      renderOutput('Scraping page and generating AI analysis...\nThis usually takes 5-15 seconds.')
+      
+      try {
         const res = await fetch(api.trigger + '?url=' + encodeURIComponent(url), {method:'POST'})
-        if(!res.ok){ const t=await res.text(); throw new Error(t||'request failed') }
+        if(!res.ok) { const t=await res.text(); throw new Error(t||'Request failed') }
+        
         const data = await res.json()
-        const result = (data.result || data.output || JSON.stringify(data))
+        const result = (data.result || data.output || JSON.stringify(data, null, 2))
         renderOutput(result)
         pushHistory({url, result, at: Date.now()})
-        $statusText.textContent = 'Done'
-      }catch(err){
+      } catch(err) {
         console.error(err)
-        renderOutput('Error: '+ (err.message||err))
-        $statusText.textContent = 'Error'
-      }finally{ setBusy(false) }
+        renderOutput('⚠️ Error: ' + (err.message || err))
+      } finally { 
+        setBusy(false) 
+      }
     }
 
-    $analyze.addEventListener('click', ()=>analyze($url.value.trim()))
-    $demo.addEventListener('click', ()=>{
-      // quick demo urls that map to demo.py behavior
+    // Event Listeners
+    $analyze.addEventListener('click', () => analyze($url.value.trim()))
+    
+    // Allow pressing "Enter" in the input field to trigger scan
+    $url.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') analyze($url.value.trim())
+    })
+
+    $demo.addEventListener('click', () => {
       const demoUrl = 'https://marketplace.com/laptop-dell-xps-13'
       $url.value = demoUrl
       analyze(demoUrl)
     })
 
-    $copy.addEventListener('click', ()=>{
-      navigator.clipboard.writeText($output.textContent).then(()=>alert('Copied'))
+    $copy.addEventListener('click', () => {
+      navigator.clipboard.writeText($output.textContent).then(() => {
+        const originalText = $copy.textContent;
+        $copy.textContent = '✓ Copied!';
+        setTimeout(() => $copy.textContent = originalText, 2000);
+      })
     })
 
-    $tweet.addEventListener('click', ()=>{
-      // open X compose with prefilled text
-      const text = encodeURIComponent($output.textContent.substring(0,240))
-      const url = `https://x.com/intent/tweet?text=${text}`
-      window.open(url, '_blank')
+    $tweet.addEventListener('click', () => {
+      const text = encodeURIComponent($output.textContent.substring(0,240) + '...\n\nAnalyzed by The Fantastic Claw 🦀')
+      window.open(`https://x.com/intent/tweet?text=${text}`, '_blank')
     })
 
-    $download.addEventListener('click', ()=>{
-      const blob = new Blob([JSON.stringify({url:$url.value,result:$output.textContent,at:new Date().toISOString()},null,2)],{type:'application/json'})
+    $download.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify({
+        url: $url.value,
+        result: $output.textContent,
+        timestamp: new Date().toISOString()
+      }, null, 2)], {type:'application/json'})
+      
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = 'fantastic-claw-result.json'
+      a.download = `fantastic-claw-${Date.now()}.json`
       document.body.appendChild(a); a.click(); a.remove()
     })
 
-    $clear.addEventListener('click', ()=>{ $output.textContent='No analysis yet — try a URL above.' })
+    $clear.addEventListener('click', () => { 
+      $output.textContent = 'Awaiting instructions...';
+      $url.value = '';
+    })
 
-    // init
-    checkHealth(); renderHistory();
+    // Init
+    checkHealth(); 
+    renderHistory();
   </script>
 </body>
 </html>
