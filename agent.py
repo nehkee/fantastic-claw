@@ -128,10 +128,11 @@ prompt = ChatPromptTemplate.from_messages([
     
     CRITICAL RULES:
     1. First, use `scrape_listing` to analyze the user's provided URL. 
-    2. If the item is a bad flip (too expensive, no margin), figure out what category the item is (e.g., "gaming headset").
+    2. If the item is a bad flip, figure out its category.
     3. Use the `search_better_deals` tool to search that category.
-    4. Review the search results and pick 1 or 2 cheaper alternatives that look like better flips.
-    5. Keep your final response witty, concise, and include the names/prices of your alternative recommendations! 🦀"""),
+    4. Review the search results and pick 1 or 2 cheaper alternatives.
+    5. IMPORTANT FORMATTING: You MUST provide a direct link to your alternative recommendations using standard Markdown format. Construct the Amazon link using the ASIN like this: [Product Name](https://www.amazon.com/dp/ASIN)
+    6. Keep your final response witty, concise, and highlight the estimated profit margin! 🦀"""),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
