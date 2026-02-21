@@ -66,31 +66,27 @@ def scrape_listing(url: str) -> str:
     """Scrapes an Amazon or marketplace webpage to extract product details and prices."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
     
-    # If no key is found, fall back gracefully
     if not scraper_key:
         return "Error: SCRAPER_API_KEY is missing from environment variables."
         
-    # We tell ScraperAPI to use residential IPs and automatically parse the product data
     payload = {
         'api_key': scraper_key, 
         'url': url, 
-        'premium': 'true',   # Bypasses intense bot-blockers like Amazon
-        'autoparse': 'true'  # Automatically converts Amazon HTML into clean text
+        'premium': 'true',
+        'autoparse': 'true'
     }
     
     try:
-        # Request goes through ScraperAPI's proxy network
         response = requests.get('http://api.scraperapi.com', params=payload, timeout=45)
-        
         if response.status_code == 200:
             return response.text
         else:
             return f"Scraper got blocked with status code: {response.status_code}"
-            
     except Exception as e:
         return f"Error scraping the page: {str(e)}"
 
-    @tool
+# 2. Your Search Tool
+@tool
 def search_better_deals(query: str) -> str:
     """Searches Amazon for products based on a keyword query to find alternative deals."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
@@ -98,15 +94,13 @@ def search_better_deals(query: str) -> str:
     if not scraper_key:
         return "Error: SCRAPER_API_KEY is missing."
         
-    # Format the search query into an Amazon search URL
-    # e.g., "vintage chair" becomes "https://www.amazon.com/s?k=vintage+chair"
     search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
     
     payload = {
         'api_key': scraper_key, 
         'url': search_url, 
         'premium': 'true',
-        'autoparse': 'true' # This will automatically parse the search results page!
+        'autoparse': 'true'
     }
     
     try:
@@ -117,7 +111,7 @@ def search_better_deals(query: str) -> str:
             return f"Search blocked: {response.status_code}"
     except Exception as e:
         return f"Search error: {str(e)}"
-# 2. Configure the Agent
+
 # 1. Define the LLM engine
 llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
