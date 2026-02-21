@@ -1,27 +1,26 @@
 import os
 import re
+import traceback
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.tools import tool
-import requests
-import urllib3
-import openai
-import traceback
-from bs4 import BeautifulSoup
-import tweepy
-from urllib.parse import urlparse
-
-load_dotenv()
-
-# Web framework setup
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from pydantic import BaseModel, Field
+from functools import lru_cache
+
+# LangChain Imports
+from langchain_groq import ChatGroq
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.tools import tool
+
+import requests
+import tweepy
+
+load_dotenv()
+
 # Initialize the web app
 app = FastAPI()
 
@@ -61,6 +60,7 @@ twitter_client = tweepy.Client(
 
 # 1. Your Scraping Tool
 @tool
+@lru_cache(maxsize=50)
 def scrape_listing(url: str) -> str:
     """Scrapes an Amazon or marketplace webpage to extract product details and prices."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
@@ -90,6 +90,7 @@ class SearchDealsInput(BaseModel):
 
 # 2. Your Search Tool (Now locked down with args_schema)
 @tool(args_schema=SearchDealsInput)
+@lru_cache(maxsize=50)
 def search_better_deals(query: str) -> str:
     """Searches Amazon for products based on a keyword query to find alternative deals."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
@@ -99,10 +100,11 @@ def search_better_deals(query: str) -> str:
         
     search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
     
+    # Changed premium to 'false' to speed up search results scraping
     payload = {
         'api_key': scraper_key, 
         'url': search_url, 
-        'premium': 'true',
+        'premium': 'false', 
         'autoparse': 'true'
     }
     
@@ -115,14 +117,13 @@ def search_better_deals(query: str) -> str:
     except Exception as e:
         return f"Search error: {str(e)}"
 
-# 1. Define the LLM engine
-llm = ChatOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    model="openrouter/free"
+# 1. Define the LLM engine (Swapped to Groq for speed!)
+llm = ChatGroq(
+    api_key=os.getenv("GROQ_API_KEY"),
+    model="llama-3.3-70b-versatile"
 )
 
-# 2. Define the tools the agent can use (Now there are two!)
+# 2. Define the tools the agent can use
 tools = [scrape_listing, search_better_deals]
 
 # 3. Define the instructions (prompt)
@@ -150,7 +151,6 @@ def extract_urls(text: str) -> list:
     url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     return re.findall(url_pattern, text)
 
-
 # Simple market values fallback (used when LLM is unavailable)
 MARKET_VALUES = {
     "laptop": 1000,
@@ -162,7 +162,6 @@ MARKET_VALUES = {
     "desk": 400,
 }
 
-
 def extract_price_from_text(text: str) -> Optional[float]:
     """Extract numeric price value from text"""
     m = re.search(r"\$?([\d,]+\.?\d*)", text)
@@ -172,7 +171,6 @@ def extract_price_from_text(text: str) -> Optional[float]:
         return float(m.group(1).replace(",", ""))
     except Exception:
         return None
-
 
 def local_analyze(url: str) -> str:
     """Fallback analysis that scrapes the page and compares price to simple market values."""
@@ -209,13 +207,12 @@ def local_analyze(url: str) -> str:
 def health_check():
     return {"status": "The Fantastic Claw is awake and listening on X!", "version": "1.0.0"}
 
-
 @app.get("/health/config-status")
 def config_status():
     """Return whether key environment variables are present."""
-    openai_set = bool(os.getenv("OPENAI_API_KEY"))
+    groq_set = bool(os.getenv("GROQ_API_KEY"))
     x_creds = all([X_CONSUMER_KEY, X_CONSUMER_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_BEARER_TOKEN])
-    return {"openai_api_key_set": openai_set, "x_credentials_set": x_creds}
+    return {"groq_api_key_set": groq_set, "x_credentials_set": x_creds}
 
 @app.post("/trigger-claw")
 def trigger_agent(url: str):
@@ -235,20 +232,17 @@ def trigger_agent(url: str):
             pass
 
         err = str(e)
-        # Detect common OpenAI auth errors by message content
         if any(k in err for k in ["invalid_api_key", "Incorrect API key", "AuthenticationError", "401"]):
             fallback = local_analyze(url)
             return {"result": fallback, "note": "LLM unavailable, returned local analysis"}
 
         return JSONResponse(status_code=500, content={"error": err})
 
-
 # Model for posting to X
 class PostToXRequest(BaseModel):
     text: str
     in_reply_to: Optional[str] = None
     reply_to_username: Optional[str] = None
-
 
 @app.post("/post-to-x")
 def post_to_x(payload: PostToXRequest):
@@ -276,7 +270,6 @@ async def x_webhook(request: Request):
     
     # Verify the webhook (X sends a challenge token)
     if data.get("for_user_id"):
-        # Handle challenge verification
         return {"challenge_response": data.get("challenge_token")}
     
     try:
@@ -301,9 +294,6 @@ async def x_webhook(request: Request):
                         "input": f"Analyze this product listing for flipping potential: {url}. Be concise and witty!"
                     })
                     reply_text = agent_response["output"][:280]  # X limit
-                except openai.error.AuthenticationError:
-                    print("OpenAI auth error when handling webhook; using local fallback")
-                    reply_text = local_analyze(url)[:280]
                 except Exception as e:
                     print(f"Agent error in webhook: {str(e)}; using local fallback")
                     reply_text = local_analyze(url)[:280]
@@ -321,10 +311,13 @@ async def x_webhook(request: Request):
                 return {"status": "success", "response": reply_text}
             else:
                 # No URL found, ask user to provide one
-                twitter_client.create_tweet(
-                    text=f"@{data['includes']['users'][0]['username']} No URL found! Please tag me with a product link 🦀",
-                    in_reply_to_tweet_id=post_id
-                )
+                try:
+                    twitter_client.create_tweet(
+                        text=f"@{data['includes']['users'][0]['username']} No URL found! Please tag me with a product link 🦀",
+                        in_reply_to_tweet_id=post_id
+                    )
+                except Exception as e:
+                    print(f"Error replying to post without URL: {str(e)}")
                 return {"status": "no_url_provided"}
     
     except Exception as e:
