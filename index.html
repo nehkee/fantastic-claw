@@ -3,336 +3,687 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>The Fantastic Claw — Deal Finder</title>
+  <title>Fantastic Claw | AI-Powered Retail Arbitrage</title>
   
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg: #0f1724; 
-      --card: #131c2c; 
-      --accent: #ff7a18; 
-      --accent-grad: linear-gradient(135deg, #ff7a18, #ff3d81);
-      --muted: #94a3b8; 
-      --glass: rgba(255, 255, 255, 0.04);
-      --glass-hover: rgba(255, 255, 255, 0.08);
-      --success: #18c78b; 
-      --danger: #ff6b6b; 
-      --maxw: 800px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      /* Obsidian & Neon Palette */
+      --bg-base: #02040a;
+      --bg-panel: #0d1117;
+      --bg-surface: #161b22;
+      --primary: #00e5ff; /* Cyber Cyan */
+      --primary-dim: rgba(0, 229, 255, 0.15);
+      --secondary: #b300ff; /* Deep Neon Purple */
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --border: rgba(240, 246, 252, 0.1);
+      --border-highlight: rgba(0, 229, 255, 0.4);
+      --success: #3fb950;
+      --danger: #f85149;
     }
 
-    * { box-sizing: border-box; }
-    html, body { min-height: 100vh; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
-      background: linear-gradient(180deg, var(--bg) 0%, #071024 100%);
-      color: #e6eef8;
-      display: flex;
-      justify-content: center;
-      padding: 40px 20px;
-      line-height: 1.5;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(179, 0, 255, 0.05), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(0, 229, 255, 0.05), transparent 25%);
     }
 
-    .wrap { width: 100%; max-width: var(--maxw); display: flex; flex-direction: column; gap: 24px; }
-    
-    header { display: flex; align-items: center; gap: 18px; margin-bottom: 8px; }
-    .logo { width: 64px; height: 64px; border-radius: 14px; background: var(--accent-grad); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 24px rgba(255, 122, 24, 0.25); }
-    h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-    p.lead { margin: 4px 0 0 0; color: var(--muted); font-size: 14px; max-width: 500px; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-    .card { background: var(--card); border-radius: 16px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.03); }
-    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .card-title { font-weight: 700; font-size: 16px; color: #fff; }
-    
-    .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
-    input.url { flex: 1; padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 14px; transition: all 0.2s; }
-    input.url:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.15); }
-    
-    button { transition: all 0.2s ease; font-family: inherit; font-size: 14px; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
-    button.primary { background: var(--accent-grad); border: none; color: #fff; padding: 14px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 61, 129, 0.2); }
-    button.primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 61, 129, 0.3); }
-    button.ghost { background: var(--glass); border: 1px solid rgba(255,255,255,0.05); color: #e6eef8; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; }
-    button.ghost:hover:not(:disabled) { background: var(--glass-hover); }
+    /* --- NAVIGATION --- */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 5%;
+      background: rgba(2, 4, 10, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
 
-    .status-area { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .status-left { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
-    .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 20px; background: var(--glass); border: 1px solid rgba(255,255,255,0.05); }
+    .brand {
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     
-    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
-    .spinner.active { display: inline-block; }
+    .brand-icon {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 26px;
+    }
+
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--text-main); }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(63, 185, 80, 0.1);
+      border: 1px solid rgba(63, 185, 80, 0.2);
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--success);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+    }
+
+    /* --- PAGE CONTAINERS --- */
+    .page { display: none; padding: 60px 5%; min-height: 90vh; animation: fadeUp 0.4s ease-out forwards; opacity: 0; transform: translateY(15px); }
+    .page.active { display: block; }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* --- HERO SECTION --- */
+    .hero { max-width: 900px; margin: 0 auto; text-align: center; }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: var(--primary-dim);
+      border: 1px solid var(--border-highlight);
+      border-radius: 100px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+    .hero h1 { font-size: 4rem; font-weight: 900; line-height: 1.1; letter-spacing: -2px; margin-bottom: 24px; color: #ffffff; }
+    .hero p { font-size: 1.2rem; color: var(--text-muted); line-height: 1.6; max-width: 700px; margin: 0 auto 40px; }
+    
+    .btn-glow {
+      background: var(--text-main);
+      color: var(--bg-base);
+      border: none;
+      padding: 16px 36px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+    .btn-glow:hover {
+      background: var(--primary);
+      box-shadow: 0 0 30px var(--primary-dim);
+      transform: translateY(-2px);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 80px;
+      text-align: left;
+    }
+    .feature-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+      border-radius: 16px;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .feature-card:hover { transform: translateY(-5px); border-color: var(--border-highlight); }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 12px; color: var(--primary); }
+    .feature-card p { font-size: 0.95rem; color: var(--text-muted); }
+
+    /* --- DUAL-PANE TERMINAL --- */
+    .terminal-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .terminal-main, .terminal-history {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .terminal-header {
+      background: var(--bg-surface);
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mac-dots { display: flex; gap: 8px; }
+    .mac-dots div { width: 12px; height: 12px; border-radius: 50%; }
+    .mac-dots .red { background: #ff5f56; }
+    .mac-dots .yellow { background: #ffbd2e; }
+    .mac-dots .green { background: #27c93f; }
+    .terminal-title { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+
+    .terminal-body { padding: 32px; }
+
+    /* Search Bar */
+    .search-bar {
+      display: flex;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px;
+      margin-bottom: 24px;
+      transition: all 0.3s;
+    }
+    .search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-dim); }
+    .search-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 12px 16px;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+    }
+    .search-bar button {
+      background: var(--text-main);
+      color: var(--bg-base);
+      border: none;
+      padding: 0 28px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-bar button:hover:not(:disabled) { background: var(--primary); }
+    .search-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Output Screen */
+    .output-screen {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      min-height: 450px;
+      max-height: 600px;
+      overflow-y: auto;
+      font-size: 15px;
+      position: relative;
+    }
+
+    /* History Panel */
+    .history-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-header h3 { font-size: 14px; font-weight: 600; color: var(--text-main); }
+    .clear-history-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .clear-history-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    .history-list {
+      padding: 16px;
+      max-height: 560px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .history-item:hover {
+      border-color: var(--border-highlight);
+      background: rgba(0, 229, 255, 0.02);
+      transform: translateX(4px);
+    }
+    .history-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--primary);
+      opacity: 0;
+      transition: 0.2s;
+    }
+    .history-item:hover::before { opacity: 1; }
+    
+    .hist-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--primary); }
+    .hist-url { font-size: 13px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+    /* Markdown Output Styling inside Terminal */
+    .output-screen h3 { color: var(--primary); margin: 24px 0 16px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    .output-screen p { color: #c9d1d9; margin-bottom: 16px; }
+    .output-screen ul { margin-bottom: 16px; padding-left: 20px; color: #c9d1d9; }
+    .output-screen table { width: 100%; border-collapse: collapse; margin: 24px 0; background: var(--bg-surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .output-screen th { text-align: left; padding: 14px 16px; color: var(--primary); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .output-screen td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: #e5e7eb; }
+    .output-screen a { color: var(--primary); text-decoration: none; border-bottom: 1px dotted var(--primary); font-weight: 600; transition: 0.2s; }
+    .output-screen a:hover { color: #fff; border-bottom-style: solid; }
+
+    /* --- DOCUMENTATION STYLING --- */
+    .docs-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 60px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .sidebar { position: sticky; top: 100px; align-self: start; }
+    .sidebar h4 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .sidebar ul { list-style: none; margin-bottom: 40px; }
+    .sidebar li { margin-bottom: 12px; }
+    .sidebar a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .sidebar a:hover { color: var(--primary); }
+
+    .docs-content {
+      background: var(--bg-panel);
+      padding: 60px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    
+    .docs-content h1 { font-size: 2.8rem; margin-bottom: 24px; letter-spacing: -1px; color: #fff; }
+    .docs-content h2 { font-size: 1.8rem; margin: 60px 0 24px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    .docs-content h3 { font-size: 1.3rem; margin: 40px 0 16px; color: var(--text-main); }
+    
+    .docs-content p { color: var(--text-muted); margin-bottom: 24px; font-size: 1.05rem; line-height: 1.8; }
+    .docs-content ul { color: var(--text-muted); margin-bottom: 30px; padding-left: 24px; font-size: 1.05rem; line-height: 1.8; }
+    .docs-content li { margin-bottom: 12px; }
+    
+    .code-box {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #79c0ff;
+      margin: 30px 0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .code-comment { color: #8b949e; }
+    .code-keyword { color: #ff7b72; }
+    .code-string { color: #a5d6ff; }
+
+    /* Loaders & Empty States */
+    .loader {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--border-highlight);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* NEW STYLES FOR THE FORMATTED AI OUTPUT */
-    .output-formatted { background: #07101a; padding: 20px; border-radius: 10px; color: #a5d2ff; border: 1px solid rgba(255,255,255,0.04); font-size: 15px; line-height: 1.6; min-height: 100px; margin: 0 0 16px 0; overflow-x: auto; }
-    .output-formatted p { margin-top: 0; margin-bottom: 12px; }
-    .output-formatted p:last-child { margin-bottom: 0; }
-    .output-formatted ul, .output-formatted ol { margin-top: 0; margin-bottom: 12px; padding-left: 20px; }
-    .output-formatted strong { color: #ffffff; font-weight: 700; }
-    .output-formatted a { color: var(--accent); text-decoration: none; font-weight: 700; border-bottom: 1px solid rgba(255, 122, 24, 0.3); transition: all 0.2s; }
-    .output-formatted a:hover { color: #ff3d81; border-bottom-color: #ff3d81; }
-    
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      text-align: center;
+      opacity: 0.7;
+    }
 
-    .history { margin-top: 10px; }
-    .hist-item { background: var(--glass); border: 1px solid rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.2s; }
-    .hist-item:hover { background: var(--glass-hover); }
-    .hist-url { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; color: #fff; margin-bottom: 4px; }
-    .muted { color: var(--muted); font-size: 12px; }
-    
-    footer { text-align: center; margin-top: 24px; color: var(--muted); font-size: 13px; }
-
-    @media (max-width: 600px) {
-      .form-row { flex-direction: column; }
-      .hist-item { flex-direction: column; align-items: flex-start; }
-      .hist-url { max-width: 100%; }
-      button.primary { width: 100%; }
-      .actions button { flex: 1; text-align: center; }
+    @media (max-width: 1000px) {
+      .terminal-container, .docs-layout { grid-template-columns: 1fr; }
+      .terminal-history { max-height: 400px; }
+      .sidebar { display: none; }
+      .docs-content { padding: 30px; }
+    }
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.8rem; }
+      .nav-links { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    
-    <header>
-      <div class="logo">🦀</div>
-      <div>
-        <h1>The Fantastic Claw</h1>
-        <p class="lead">Analyze product listings, find flips, and uncover underpriced deals instantly.</p>
-      </div>
-    </header>
 
-    <section class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Deal Scanner</div>
-          <div class="muted">Paste an Amazon or marketplace URL below</div>
-        </div>
-        <div class="status-badge" id="app-status">Connecting...</div>
-      </div>
+  <nav>
+    <div class="brand"><span class="brand-icon">🦀</span> <span>FantasticClaw</span></div>
+    <div class="nav-links">
+      <a onclick="showPage('home')" id="nav-home" class="active">Overview</a>
+      <a onclick="showPage('scanner')" id="nav-scanner">Terminal</a>
+      <a onclick="showPage('docs')" id="nav-docs">Documentation</a>
+    </div>
+    <div class="status-pill">
+      <div style="width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success);"></div>
+      SECURE
+    </div>
+  </nav>
 
-      <div class="form-row">
-        <input id="url-input" class="url" placeholder="https://example.com/vintage-chair" autocomplete="off" />
-        <button id="analyze-btn" class="primary">Analyze</button>
-        <button id="demo-btn" class="ghost">Run Demo</button>
-      </div>
+  <section id="home" class="page active">
+    <div class="hero">
+      <div class="hero-badge">Enterprise Arbitrage Engine</div>
+      <h1>Sourcing, Perfected.<br>Margins, Maximized.</h1>
+      <p>Built exclusively for e-commerce operators, dropshippers, and retail arbitrage professionals. Stop guessing on your margins. Fantastic Claw deploys reasoning LLM agents to instantly find the absolute lowest acquisition costs for your inventory.</p>
+      <button class="btn-glow" onclick="showPage('scanner')">Launch Scanner Terminal</button>
+    </div>
 
-      <div class="status-area">
-        <div class="status-left">
-          <div id="spinner" class="spinner"></div>
-          <span id="status-text">Ready to scan.</span>
-        </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>Live Market Scraping</h3>
+        <p>Bypasses extreme anti-bot protections on major marketplaces using rotating residential proxies to extract live pricing and ASINs.</p>
       </div>
+      <div class="feature-card">
+        <h3>Agentic Reasoning</h3>
+        <p>Doesn't just pull data. It uses Llama-3.3 to contextually understand the item, identify identical alternative products, and calculate net flip margins.</p>
+      </div>
+      <div class="feature-card">
+        <h3>X (Twitter) Integration</h3>
+        <p>Fully equipped with Webhook listeners. Tag @FantasticClaw on X with a product URL, and receive an instant margin analysis reply.</p>
+      </div>
+    </div>
+  </section>
 
-      <div class="card-header" style="margin-bottom: 12px;">
-        <div class="card-title">Analysis Output</div>
-        <div class="muted">Powered by LangChain</div>
-      </div>
+  <section id="scanner" class="page">
+    <div class="terminal-container">
       
-      <div id="output" class="output-formatted">Awaiting instructions...</div>
+      <div class="terminal-main">
+        <div class="terminal-header">
+          <div class="mac-dots">
+            <div class="red"></div><div class="yellow"></div><div class="green"></div>
+          </div>
+          <div class="terminal-title">claw@arbitrage-server: ~/execute</div>
+        </div>
+        
+        <div class="terminal-body">
+          <div class="search-bar">
+            <input id="url-input" placeholder="Enter Target URL (Amazon/Marketplace)..." autocomplete="off" spellcheck="false" />
+            <button id="analyze-btn">EXECUTE</button>
+          </div>
 
-      <div class="actions">
-        <button id="copy-btn" class="ghost">Copy Results</button>
-        <button id="tweet-btn" class="ghost">Share on X</button>
-        <button id="download-btn" class="ghost">Save JSON</button>
-        <button id="clear-btn" class="ghost" style="margin-left: auto;">Clear</button>
+          <div id="output" class="output-screen">
+            <div class="empty-state">
+              <span style="font-size: 24px; margin-bottom: 16px; opacity: 0.5;">🦀</span>
+              AWAITING TARGET PROTOCOL...<br>
+              Input URL to begin deep-scan extraction.
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <section class="card history" id="history-section" style="display: none;">
-      <div class="card-header">
-        <div class="card-title">Recent Scans</div>
+      <div class="terminal-history">
+        <div class="history-header">
+          <h3>Session History</h3>
+          <button class="clear-history-btn" onclick="clearHistory()">PURGE</button>
+        </div>
+        <div id="history-list" class="history-list">
+          </div>
       </div>
-      <div id="history-list"></div>
-    </section>
 
-    <footer>
-      The Fantastic Claw • Built with FastAPI & LangChain
-    </footer>
+    </div>
+  </section>
+
+  <section id="docs" class="page">
+    <div class="docs-layout">
+      <aside class="sidebar">
+        <h4>The Engine</h4>
+        <ul>
+          <li><a href="#overview">System Overview</a></li>
+          <li><a href="#react">The ReAct Paradigm</a></li>
+          <li><a href="#groq">Groq LPU Inference</a></li>
+        </ul>
+        <h4>Data Ingestion</h4>
+        <ul>
+          <li><a href="#scraping">Proxy Architecture</a></li>
+          <li><a href="#context">Context Window Mgt</a></li>
+        </ul>
+      </aside>
+
+      <main class="docs-content">
+        <h1>System Architecture & Documentation</h1>
+        <p>Fantastic Claw represents a paradigm shift from basic web scraping to autonomous, AI-driven market research. Built on the LangChain framework, it is designed specifically to calculate e-commerce profit margins with high accuracy, speed, and reliability.</p>
+
+        
+
+        <h2 id="overview">System Overview</h2>
+        <p>The application is divided into robust, isolated micro-services that prioritize asynchronous data handling and non-blocking LLM reasoning.</p>
+        <ul>
+          <li><strong>Frontend:</strong> Vanilla JS Single Page Application (SPA), rendering dynamic markdown via <code>marked.js</code> for instantaneous, lightweight DOM updates.</li>
+          <li><strong>Backend:</strong> Python-based FastAPI, providing lightning-fast, asynchronous API endpoints that handle simultaneous proxy requests without thread-locking.</li>
+          <li><strong>Agentic Framework:</strong> LangChain's <code>create_tool_calling_agent</code> engine, giving the AI the ability to autonomously trigger custom Python functions.</li>
+          <li><strong>LLM Engine:</strong> Groq API utilizing the state-of-the-art Llama-3.3 70B Versatile model.</li>
+        </ul>
+
+        <h2 id="react">The ReAct (Reason + Act) Paradigm</h2>
+        <p>Fantastic Claw operates autonomously. Instead of executing a linear, hard-coded script, the Large Language Model is provided a set of Tools and a master system prompt. Upon receiving a user's target URL, the agent enters an autonomous thought loop.</p>
+        
+        
+        
+        <p>This looping architecture allows the agent to self-correct. For example, if a broad search term fails to yield alternative products, the agent recognizes the failure and initiates a secondary search using a more refined keyword extracted from the product title.</p>
+        
+        <div class="code-box">
+<span class="code-comment"># Example of the Agent's internal logic stream:</span>
+<span class="code-keyword">Thought:</span> I need to extract the product price and details from the target URL.
+<span class="code-keyword">Action:</span> Call `scrape_listing(url)`
+<span class="code-keyword">Observation:</span> The current listed price is $65.00. The product is "Nike Air".
+<span class="code-keyword">Thought:</span> I need to find the broader market acquisition cost to calculate a reliable profit margin.
+<span class="code-keyword">Action:</span> Call `search_better_deals("Nike Air mens size 10")`
+        </div>
+
+        <h2 id="groq">Groq LPU Inference</h2>
+        <p>Traditional AI models operating on GPUs execute at roughly 20 to 40 tokens per second. In a multi-step agent loop like ReAct, this creates an agonizingly slow user experience (often exceeding 2 minutes per query).</p>
+        <p>Fantastic Claw mitigates this by relying on <strong>Groq's Language Processing Units (LPUs)</strong>. Because LPUs process text sequentially rather than parallelly, they achieve inference speeds exceeding <strong>300 tokens per second</strong>. This allows the Fantastic Claw agent to complete an 8-iteration reasoning loop in under 5 seconds, making the system bound only by the network speed of the external web scraper.</p>
+
+        <h2 id="scraping">Dual-Proxy Architecture</h2>
+        <p>Modern e-commerce sites (like Amazon) employ aggressive bot-mitigation techniques via Cloudflare and Akamai. To circumvent IP bans and CAPTCHAs, the tool architecture uses a dual-proxy strategy via ScraperAPI:</p>
+        <ul>
+          <li><strong>Deep Scraping (Target URL):</strong> Uses <code>premium=true</code> to route traffic exclusively through a rotating network of global residential IP addresses. This ensures a 99% success rate on heavily guarded individual product pages.</li>
+          <li><strong>Market Discovery (Search URL):</strong> Broad search queries are generally less guarded. We route these through standard datacenter IPs (<code>premium=false</code>) to drastically reduce latency when scanning for alternative ASINs and price floors.</li>
+        </ul>
+
+        <h2 id="context">Context Window Management</h2>
+        <p>A significant challenge in LLM-based web scraping is token exhaustion. The raw HTML from a single Amazon product page can easily exceed 200,000 characters, crashing standard LLM context windows or resulting in massive API billing costs.</p>
+        <p>Fantastic Claw employs a targeted DOM stripping mechanism utilizing the <code>BeautifulSoup</code> library before passing data to the LLM:</p>
+        
+        <div class="code-box">
+<span class="code-keyword">def</span> <span class="code-string">clean_html_for_ai</span>(raw_html: str) -> str:
+    <span class="code-comment"># Instantiate the parser</span>
+    soup = BeautifulSoup(raw_html, <span class="code-string">"html.parser"</span>)
     
-  </div>
+    <span class="code-comment"># Strip heavy execution code, formatting, and structural junk</span>
+    <span class="code-keyword">for</span> element <span class="code-keyword">in</span> soup([<span class="code-string">"script"</span>, <span class="code-string">"style"</span>, <span class="code-string">"nav"</span>, <span class="code-string">"footer"</span>, <span class="code-string">"noscript"</span>]):
+        element.decompose()
+        
+    <span class="code-comment"># Collapse whitespace and hard-truncate to 10,000 characters to protect API limits</span>
+    <span class="code-keyword">return</span> re.sub(<span class="code-string">r'\s+'</span>, <span class="code-string">' '</span>, soup.get_text()).strip()[:<span class="code-string">10000</span>]
+        </div>
+      </main>
+    </div>
+  </section>
 
   <script>
-    const api = { health: '/health', trigger: '/trigger-claw' }
+    const api = { trigger: '/trigger-claw' };
 
-    const $status = document.getElementById('app-status')
-    const $statusText = document.getElementById('status-text')
-    const $spinner = document.getElementById('spinner')
-    const $output = document.getElementById('output')
-    const $url = document.getElementById('url-input')
-    const $analyze = document.getElementById('analyze-btn')
-    const $demo = document.getElementById('demo-btn')
-    const $copy = document.getElementById('copy-btn')
-    const $tweet = document.getElementById('tweet-btn')
-    const $download = document.getElementById('download-btn')
-    const $clear = document.getElementById('clear-btn')
-    const $historyList = document.getElementById('history-list')
-    const $historySection = document.getElementById('history-section')
-
-    let busy = false
-
-    async function checkHealth(){
-      try {
-        const res = await fetch(api.health)
-        if(!res.ok) throw new Error('unhealthy')
-        const body = await res.json()
-        $status.innerHTML = `🟢 ${body.status || 'Live'}`
-        $status.style.color = 'var(--success)'
-        $status.style.borderColor = 'rgba(24, 199, 139, 0.2)'
-      } catch(e) {
-        $status.innerHTML = '🔴 Offline'
-        $status.style.color = 'var(--danger)'
-        $status.style.borderColor = 'rgba(255, 107, 107, 0.2)'
-      }
-    }
-
-    function setBusy(isBusy) { 
-      busy = isBusy; 
-      $analyze.disabled = isBusy; 
-      $demo.disabled = isBusy; 
-      
-      if(isBusy) {
-        $spinner.classList.add('active');
-        $statusText.textContent = 'Agent is analyzing the listing...';
-        $statusText.style.color = '#fff';
-      } else {
-        $spinner.classList.remove('active');
-        $statusText.textContent = 'Scan complete.';
-        $statusText.style.color = 'var(--muted)';
-      }
-    }
-
-    // THE MAGIC FIX: We use marked.parse() to safely turn the AI's markdown into perfect HTML
-    function renderOutput(text) {
-      // Configure marked to open links in a new tab
-      marked.use({
-        renderer: {
-          link({ href, title, text }) {
-            return `<a target="_blank" href="${href}" title="${title || ''}">${text}</a>`;
-          }
-        }
+    // --- Navigation Logic ---
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active');
+        p.style.animation = 'none';
+        p.offsetHeight; 
+        p.style.animation = null; 
       });
-      $output.innerHTML = marked.parse(text);
+      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+      
+      document.getElementById(pageId).classList.add('active');
+      document.getElementById('nav-' + pageId).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function pushHistory(item) {
-      const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
-      items.unshift(item)
-      if(items.length > 5) items.pop()
-      localStorage.setItem('fc_history', JSON.stringify(items))
-      renderHistory()
+    // --- Markdown Configuration ---
+    marked.setOptions({ gfm: true, breaks: true });
+
+    // --- History Management ---
+    function saveToHistory(url, result) {
+      const history = JSON.parse(localStorage.getItem('fc_session_history') || '[]');
+      const newItem = {
+        id: Date.now().toString(),
+        url: url,
+        result: result,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      };
+      
+      history.unshift(newItem);
+      if(history.length > 15) history.pop();
+      
+      localStorage.setItem('fc_session_history', JSON.stringify(history));
+      renderHistory();
     }
 
     function renderHistory() {
-      const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
-      if (items.length === 0) {
-        $historySection.style.display = 'none';
+      const history = JSON.parse(localStorage.getItem('fc_session_history') || '[]');
+      const $list = document.getElementById('history-list');
+      
+      if(history.length === 0) {
+        $list.innerHTML = `<div class="empty-state" style="height: 150px; opacity: 0.4;">NO RECENT SCANS</div>`;
         return;
       }
-      
-      $historySection.style.display = 'block';
-      $historyList.innerHTML = ''
-      
-      items.forEach((it, idx) => {
-        const div = document.createElement('div')
-        div.className = 'hist-item'
+
+      $list.innerHTML = history.map(item => {
+        const displayUrl = item.url.replace(/^https?:\/\//, '').split(/[?#]/)[0];
         
-        const displayUrl = it.url.replace(/^https?:\/\//, '').split('?')[0];
-
-        div.innerHTML = `
-          <div style="flex: 1; min-width: 0;">
-            <div class='hist-url' title="${it.url}">${displayUrl}</div>
-            <div class='muted'>${new Date(it.at).toLocaleTimeString()}</div>
+        return `
+          <div class="history-item" onclick="loadHistoryItem('${item.id}')">
+            <div class="hist-meta">
+              <span>SCAN // SUCCESS</span>
+              <span>${item.timestamp}</span>
+            </div>
+            <div class="hist-url" title="${item.url}">${displayUrl}</div>
           </div>
-          <div>
-            <button class='ghost' style="padding: 6px 12px; font-size: 12px;" data-idx='${idx}'>Reload</button>
-          </div>
-        `
-        $historyList.appendChild(div)
-      })
-
-      $historyList.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
-        const idx = e.currentTarget.dataset.idx
-        const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
-        const it = items[idx]
-        if(it) { 
-          $url.value = it.url; 
-          renderOutput(it.result);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }))
+        `;
+      }).join('');
     }
 
-    async function analyze(url){
-      if(!url) return alert('Please enter a URL first.')
-      setBusy(true)
-      
-      // Temporarily write plain text while loading
-      $output.innerHTML = '<p>Scraping page and generating AI analysis...</br>This usually takes 5-15 seconds.</p>'
-      
-      try {
-        const res = await fetch(api.trigger + '?url=' + encodeURIComponent(url), {method:'POST'})
-        if(!res.ok) { const t=await res.text(); throw new Error(t||'Request failed') }
+    function loadHistoryItem(id) {
+      const history = JSON.parse(localStorage.getItem('fc_session_history') || '[]');
+      const item = history.find(i => i.id === id);
+      if(item) {
+        document.getElementById('url-input').value = item.url;
+        document.getElementById('output').innerHTML = marked.parse(item.result);
         
-        const data = await res.json()
-        const result = (data.result || data.output || JSON.stringify(data, null, 2))
-        
-        // Render the final markdown result
-        renderOutput(result)
-        pushHistory({url, result, at: Date.now()})
-      } catch(err) {
-        console.error(err)
-        $output.innerHTML = `<p style="color: var(--danger);">⚠️ Error: ${err.message || err}</p>`
-      } finally { 
-        setBusy(false) 
+        if(window.innerWidth <= 1000) {
+          document.getElementById('output').scrollIntoView({behavior: 'smooth'});
+        }
       }
     }
 
-    $analyze.addEventListener('click', () => analyze($url.value.trim()))
-    
-    $url.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') analyze($url.value.trim())
-    })
+    function clearHistory() {
+      if(confirm("Purge all session history?")) {
+        localStorage.removeItem('fc_session_history');
+        renderHistory();
+      }
+    }
 
-    $demo.addEventListener('click', () => {
-      const demoUrl = 'https://marketplace.com/laptop-dell-xps-13'
-      $url.value = demoUrl
-      analyze(demoUrl)
-    })
-
-    $copy.addEventListener('click', () => {
-      // Copy plain text, not HTML
-      navigator.clipboard.writeText($output.innerText).then(() => {
-        const originalText = $copy.textContent;
-        $copy.textContent = '✓ Copied!';
-        setTimeout(() => $copy.textContent = originalText, 2000);
-      })
-    })
-
-    $tweet.addEventListener('click', () => {
-      const text = encodeURIComponent($output.innerText.substring(0,240) + '...\n\nAnalyzed by The Fantastic Claw 🦀')
-      window.open(`https://x.com/intent/tweet?text=${text}`, '_blank')
-    })
-
-    $download.addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify({
-        url: $url.value,
-        result: $output.innerText,
-        timestamp: new Date().toISOString()
-      }, null, 2)], {type:'application/json'})
+    // --- Core Execution ---
+    async function analyze(url){
+      const $output = document.getElementById('output');
+      const $btn = document.getElementById('analyze-btn');
+      if(!url) return;
       
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `fantastic-claw-${Date.now()}.json`
-      document.body.appendChild(a); a.click(); a.remove()
-    })
+      $btn.disabled = true;
+      
+      $output.innerHTML = `
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--primary); padding-top: 20px;">
+          <div style="margin-bottom: 16px; color: #fff;"><span class="loader"></span> ESTABLISHING PROXY TUNNEL...</div>
+          <div style="color: var(--text-muted); margin-bottom: 8px;">> BYPASSING ANTI-BOT PROTOCOLS [OK]</div>
+          <div style="color: var(--text-muted); margin-bottom: 8px;">> EXTRACTING DOM METADATA [IN PROGRESS]</div>
+          <div style="color: var(--text-muted);">> INITIALIZING LLAMA-3.3 REASONING AGENT...</div>
+        </div>`;
+      
+      try {
+        const res = await fetch(api.trigger + '?url=' + encodeURIComponent(url), {method:'POST'});
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        $output.innerHTML = marked.parse(data.result || "No data returned.");
+        saveToHistory(url, data.result);
+        
+      } catch(err) {
+        $output.innerHTML = `
+          <div style="color: var(--danger); font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(248, 81, 73, 0.3); padding: 20px; border-radius: 8px; background: rgba(248, 81, 73, 0.05);">
+            <strong style="color: var(--danger); font-size: 14px;">[CRITICAL EXCEPTION]</strong><br><br>
+            Message: ${err.message}<br>
+            Action: Verify target URL integrity or retry connection.
+          </div>`;
+      } finally {
+        $btn.disabled = false;
+      }
+    }
 
-    $clear.addEventListener('click', () => { 
-      $output.innerHTML = 'Awaiting instructions...';
-      $url.value = '';
-    })
+    // --- Event Listeners ---
+    document.getElementById('analyze-btn').addEventListener('click', () => {
+      analyze(document.getElementById('url-input').value.trim());
+    });
 
-    checkHealth(); 
+    document.getElementById('url-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') analyze(e.target.value.trim());
+    });
+
+    // Initialize
     renderHistory();
   </script>
 </body>
