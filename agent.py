@@ -32,14 +32,12 @@ def get_ui():
 
 # --- UTILITY: DATA EXTRACTION ---
 def clean_html_for_ai(raw_html: str) -> str:
-    """Strips the junk but keeps the meat: Title, Price, and ASINs."""
     soup = BeautifulSoup(raw_html, "html.parser")
     for element in soup(["script", "style", "nav", "footer", "header", "noscript"]):
         element.decompose()
-    
-    # We specifically look for ASINs in the text or links to help the agent build URLs
     text = soup.get_text(separator=" ")
-    return re.sub(r'\s+', ' ', text).strip()[:10000]
+    # Reduced to 6000 to save LLM tokens and processing time
+    return re.sub(r'\s+', ' ', text).strip()[:6000]
 
 # --- TOOLS ---
 
@@ -52,10 +50,13 @@ def scrape_listing(url: str) -> str:
     
     payload = {'api_key': scraper_key, 'url': url, 'premium': 'true', 'autoparse': 'true'}
     try:
-        response = requests.get('http://api.scraperapi.com', params=payload, timeout=40)
-        return clean_html_for_ai(response.text) if response.status_code == 200 else "Scrape failed."
+        # Reduced timeout to prevent Render from killing the app
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=25)
+        if response.status_code == 403: 
+            return "Error: ScraperAPI credits exhausted. Check dashboard."
+        return clean_html_for_ai(response.text) if response.status_code == 200 else f"Scrape failed with status: {response.status_code}"
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Scraper Exception: {str(e)}"
 
 class SearchDealsInput(BaseModel):
     query: str = Field(description="The product name/category to search.")
@@ -69,10 +70,12 @@ def search_better_deals(query: str) -> str:
     
     payload = {'api_key': scraper_key, 'url': search_url, 'premium': 'false', 'autoparse': 'true'}
     try:
-        response = requests.get('http://api.scraperapi.com', params=payload, timeout=40)
-        return clean_html_for_ai(response.text)
-    except Exception:
-        return "Search failed."
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=25)
+        if response.status_code == 403: 
+            return "Error: ScraperAPI credits exhausted."
+        return clean_html_for_ai(response.text) if response.status_code == 200 else f"Search failed with status: {response.status_code}"
+    except Exception as e:
+        return f"Search Exception: {str(e)}"
 
 # --- AGENT SETUP ---
 
@@ -80,7 +83,7 @@ llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
     model="llama-3.3-70b-versatile",
     temperature=0.1, 
-    request_timeout=90.0
+    request_timeout=60.0
 )
 
 tools = [scrape_listing, search_better_deals]
@@ -123,7 +126,7 @@ agent_executor = AgentExecutor(
     agent=agent, 
     tools=tools, 
     verbose=True, 
-    max_iterations=10, 
+    max_iterations=4, # Drastically reduced to prevent infinite loops and timeouts
     handle_parsing_errors=True
 )
 
@@ -132,10 +135,14 @@ agent_executor = AgentExecutor(
 @app.post("/trigger-claw")
 async def trigger_agent(url: str):
     try:
+        print(f"Executing scan for: {url}")
         response = agent_executor.invoke({"input": f"Perform a professional flip analysis on: {url}"})
         return {"result": response["output"]}
-    except Exception:
-        return JSONResponse(status_code=500, content={"error": "Analysis timed out. Please try again."})
+    except Exception as e:
+        # We are now capturing the exact error and sending it to the UI
+        error_message = str(e)
+        print(f"CRASH LOG: {traceback.format_exc()}")
+        return JSONResponse(status_code=500, content={"error": f"SYSTEM HALT: {error_message}"})
 
 @app.get("/health")
 def health():
