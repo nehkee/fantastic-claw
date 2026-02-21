@@ -63,10 +63,16 @@ twitter_client = tweepy.Client(
 # 1. Your Scraping Tool
 @tool
 def scrape_listing(url: str) -> str:
-    """Scrapes a product listing page for title and price."""
+    """Scrapes a webpage to extract product details."""
+    # Put on a disguise so websites think this is a real browser
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    
     try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        insecure_note = ""
+        response = requests.get(url, headers=headers, timeout=10)
+        # ... the rest of your BeautifulSoup code ...
         try:
             response = requests.get(url, headers=headers, timeout=10, verify=True)
             response.raise_for_status()
@@ -109,7 +115,12 @@ tools = [scrape_listing]
 
 # 3. Define the instructions (prompt)
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are The Fantastic Claw on X, a bot that analyzes product listings. Keep responses concise (280 chars). Analyze if it's a good flip/deal and be witty!"),
+    ("system", """You are The Fantastic Claw on X, a bot that analyzes product listings. Keep responses concise (280 chars) and witty.
+    
+    CRITICAL RULES:
+    1. ONLY analyze based on the actual text and data extracted by your web scraping tool.
+    2. If the scraper does not return a specific price or product name, DO NOT guess or make up hypothetical numbers. 
+    3. If the data is missing, simply reply: "My claws couldn't grab the price tag on this one! The site might be blocking my view. 🦀" """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
