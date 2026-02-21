@@ -21,8 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
-from pydantic import BaseModel
-
+from pydantic import BaseModel, Field
 # Initialize the web app
 app = FastAPI()
 
@@ -85,11 +84,14 @@ def scrape_listing(url: str) -> str:
     except Exception as e:
         return f"Error scraping the page: {str(e)}"
 
-# 2. Your Search Tool
-@tool
+# Create a strict blueprint for the search tool
+class SearchDealsInput(BaseModel):
+    query: str = Field(description="The mandatory product name or category to search for on Amazon (e.g., 'vintage chair' or 'gaming headset').")
+
+# 2. Your Search Tool (Now locked down with args_schema)
+@tool(args_schema=SearchDealsInput)
 def search_better_deals(query: str) -> str:
-    """Searches Amazon for products to find alternative deals. 
-    You MUST pass a specific 'query' string argument to search for (e.g., "vintage chair")."""
+    """Searches Amazon for products based on a keyword query to find alternative deals."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
     
     if not scraper_key:
