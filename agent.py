@@ -88,7 +88,7 @@ def scrape_listing(url: str) -> str:
 class SearchDealsInput(BaseModel):
     query: str = Field(description="The mandatory product name or category to search for on Amazon (e.g., 'vintage chair' or 'gaming headset').")
 
-# 2. Your Search Tool (Now locked down with args_schema)
+# 2. Your Search Tool
 @tool(args_schema=SearchDealsInput)
 @lru_cache(maxsize=50)
 def search_better_deals(query: str) -> str:
@@ -100,11 +100,10 @@ def search_better_deals(query: str) -> str:
         
     search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
     
-    # Changed premium to 'false' to speed up search results scraping
     payload = {
         'api_key': scraper_key, 
         'url': search_url, 
-        'premium': 'false', 
+        'premium': 'false', # Fast datacenter IPs for search
         'autoparse': 'true'
     }
     
@@ -117,10 +116,11 @@ def search_better_deals(query: str) -> str:
     except Exception as e:
         return f"Search error: {str(e)}"
 
-# 1. Define the LLM engine (Swapped to Groq for speed!)
+# 1. Define the LLM engine (FIXED: Added timeout and used stable model name)
 llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
-    model="llama-3.3-70b-versatile"
+    model="llama3-70b-8192",
+    request_timeout=60.0
 )
 
 # 2. Define the tools the agent can use
@@ -151,22 +151,16 @@ def extract_urls(text: str) -> list:
     url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     return re.findall(url_pattern, text)
 
-# Simple market values fallback (used when LLM is unavailable)
+# Simple market values fallback
 MARKET_VALUES = {
-    "laptop": 1000,
-    "headphones": 150,
-    "phone": 700,
-    "monitor": 300,
-    "keyboard": 100,
-    "mouse": 50,
-    "desk": 400,
+    "laptop": 1000, "headphones": 150, "phone": 700,
+    "monitor": 300, "keyboard": 100, "mouse": 50, "desk": 400,
 }
 
 def extract_price_from_text(text: str) -> Optional[float]:
     """Extract numeric price value from text"""
     m = re.search(r"\$?([\d,]+\.?\d*)", text)
-    if not m:
-        return None
+    if not m: return None
     try:
         return float(m.group(1).replace(",", ""))
     except Exception:
@@ -176,8 +170,6 @@ def local_analyze(url: str) -> str:
     """Fallback analysis that scrapes the page and compares price to simple market values."""
     scraped = scrape_listing(url)
     price = extract_price_from_text(scraped)
-    title = scraped.split("|", 1)[0] if scraped else "Unknown"
-    # crude category detection
     title_lower = scraped.lower()
     category = "unknown"
     for cat in MARKET_VALUES.keys():
@@ -187,56 +179,34 @@ def local_analyze(url: str) -> str:
 
     market = MARKET_VALUES.get(category)
     if price is None or market is None:
-        return f"Quick scan: {scraped} -- Unable to determine market comparison (price or category missing)."
+        return f"Quick scan completed. Unable to determine market comparison automatically."
 
     pct = (market - price) / market * 100
-    verdict = ""
-    if pct >= 20:
-        verdict = f"ALERT: Underpriced ({pct:.0f}% below market). Good flip!"
-    elif pct >= 10:
-        verdict = f"Good deal ({pct:.0f}% below market)."
-    elif abs(pct) <= 10:
-        verdict = "Fairly priced."
-    else:
-        verdict = "Overpriced."
+    verdict = "Underpriced!" if pct >= 20 else "Overpriced."
+    return f"Scan: ${price}. Market: ${market}. Verdict: {verdict}"
 
-    return f"{scraped}\nMarket ({category}): ${market}. {verdict}"
-
-# 3. REST API Endpoints
+# REST API Endpoints
 @app.get("/health")
 def health_check():
-    return {"status": "The Fantastic Claw is awake and listening on X!", "version": "1.0.0"}
+    return {"status": "The Fantastic Claw is awake!", "version": "1.0.1"}
 
 @app.get("/health/config-status")
 def config_status():
-    """Return whether key environment variables are present."""
     groq_set = bool(os.getenv("GROQ_API_KEY"))
     x_creds = all([X_CONSUMER_KEY, X_CONSUMER_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_BEARER_TOKEN])
     return {"groq_api_key_set": groq_set, "x_credentials_set": x_creds}
 
 @app.post("/trigger-claw")
 def trigger_agent(url: str):
-    """Hit this endpoint to make the agent scrape a specific URL"""
     print(f"Triggered scan for: {url}")
     try:
         response = agent_executor.invoke({"input": f"Check this listing: {url}. Is it a good flip?"})
         return {"result": response["output"]}
     except Exception as e:
-        # Log full traceback for diagnostics
         tb = traceback.format_exc()
-        print("Agent invoke failed (exception):", tb)
-        try:
-            with open("agent_error_trace.log", "a", encoding="utf-8") as fh:
-                fh.write(tb + "\n---\n")
-        except Exception:
-            pass
-
-        err = str(e)
-        if any(k in err for k in ["invalid_api_key", "Incorrect API key", "AuthenticationError", "401"]):
-            fallback = local_analyze(url)
-            return {"result": fallback, "note": "LLM unavailable, returned local analysis"}
-
-        return JSONResponse(status_code=500, content={"error": err})
+        print("Agent invoke failed:", tb)
+        # Fallback to local logic if LLM connection fails
+        return {"result": local_analyze(url), "note": "Connection issues, using fallback analysis."}
 
 # Model for posting to X
 class PostToXRequest(BaseModel):
@@ -246,105 +216,50 @@ class PostToXRequest(BaseModel):
 
 @app.post("/post-to-x")
 def post_to_x(payload: PostToXRequest):
-    """Post text to X (optionally as a reply). Returns tweet id on success."""
     try:
         text = payload.text
         if payload.reply_to_username:
             text = f"@{payload.reply_to_username} {text}"
         resp = twitter_client.create_tweet(text=text, in_reply_to_tweet_id=payload.in_reply_to)
-        tweet_id = None
-        if hasattr(resp, 'data') and resp.data:
-            tweet_id = resp.data.get('id')
-        return {"status": "posted", "tweet_id": tweet_id}
+        return {"status": "posted", "tweet_id": resp.data.get('id') if hasattr(resp, 'data') else None}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-# 4. Twitter Integration - Webhook for mentions
 @app.post("/x-webhook")
 async def x_webhook(request: Request):
-    """
-    Handles incoming posts that mention the bot.
-    X sends a POST request when someone posts: @FantasticClaw [url] 
-    """
     data = await request.json()
-    
-    # Verify the webhook (X sends a challenge token)
     if data.get("for_user_id"):
         return {"challenge_response": data.get("challenge_token")}
     
     try:
-        # Extract post data
         if "data" in data and "text" in data["data"]:
             post_text = data["data"]["text"]
             post_id = data["data"]["id"]
-            author_id = data["data"]["author_id"]
-            
-            print(f"New mention: {post_text}")
-            
-            # Extract URLs from the post
             urls = extract_urls(post_text)
             
             if urls:
-                # Process the first URL found
                 url = urls[0]
-                
-                # Call the agent
                 try:
                     agent_response = agent_executor.invoke({
                         "input": f"Analyze this product listing for flipping potential: {url}. Be concise and witty!"
                     })
-                    reply_text = agent_response["output"][:280]  # X limit
-                except Exception as e:
-                    print(f"Agent error in webhook: {str(e)}; using local fallback")
+                    reply_text = agent_response["output"][:280]
+                except Exception:
                     reply_text = local_analyze(url)[:280]
                 
-                # Reply to the post
-                try:
-                    twitter_client.create_tweet(
-                        text=f"@{data['includes']['users'][0]['username']} {reply_text}",
-                        in_reply_to_tweet_id=post_id
-                    )
-                    print(f"Replied to post {post_id}")
-                except Exception as e:
-                    print(f"Error replying to post: {str(e)}")
-                
-                return {"status": "success", "response": reply_text}
-            else:
-                # No URL found, ask user to provide one
-                try:
-                    twitter_client.create_tweet(
-                        text=f"@{data['includes']['users'][0]['username']} No URL found! Please tag me with a product link 🦀",
-                        in_reply_to_tweet_id=post_id
-                    )
-                except Exception as e:
-                    print(f"Error replying to post without URL: {str(e)}")
-                return {"status": "no_url_provided"}
-    
+                twitter_client.create_tweet(
+                    text=f"@{data['includes']['users'][0]['username']} {reply_text}",
+                    in_reply_to_tweet_id=post_id
+                )
+                return {"status": "success"}
     except Exception as e:
-        print(f"Error processing webhook: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 @app.get("/x-webhook")
 def verify_x_webhook(crc_token: str = None):
-    """
-    X sends a GET request to verify the webhook URL.
-    Must return the CRC token in HMAC_SHA256 format.
-    """
-    if not crc_token:
-        return {"error": "Missing crc_token"}
-    
-    import hmac
-    import hashlib
-    import base64
-    
+    if not crc_token: return {"error": "Missing crc_token"}
+    import hmac, hashlib, base64
     consumer_secret = os.getenv("X_CONSUMER_SECRET")
-    hash_object = hmac.new(
-        consumer_secret.encode('utf-8'),
-        crc_token.encode('utf-8'),
-        hashlib.sha256
-    )
+    hash_object = hmac.new(consumer_secret.encode('utf-8'), crc_token.encode('utf-8'), hashlib.sha256)
     hash_digest = base64.b64encode(hash_object.digest()).decode('utf-8')
-    
-    return {
-        "response_token": f"sha256={hash_digest}"
-    }
+    return {"response_token": f"sha256={hash_digest}"}
