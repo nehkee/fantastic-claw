@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from pydantic import BaseModel, Field
 from functools import lru_cache
+from bs4 import BeautifulSoup
 
 # LangChain Imports
 from langchain_groq import ChatGroq
@@ -22,36 +23,22 @@ import tweepy
 load_dotenv()
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.get("/")
 def get_ui():
     return FileResponse("index.html")
 
-# X API Setup
-X_CONSUMER_KEY = os.getenv("X_CONSUMER_KEY")
-X_CONSUMER_SECRET = os.getenv("X_CONSUMER_SECRET")
-X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
-X_ACCESS_TOKEN_SECRET = os.getenv("X_ACCESS_TOKEN_SECRET")
-X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
-
-twitter_client = tweepy.Client(
-    bearer_token=X_BEARER_TOKEN,
-    consumer_key=X_CONSUMER_KEY,
-    consumer_secret=X_CONSUMER_SECRET,
-    access_token=X_ACCESS_TOKEN,
-    access_token_secret=X_ACCESS_TOKEN_SECRET,
-    wait_on_rate_limit=True,
-)
+# --- UTILITY: CLEANING THE HTML ---
+def clean_html(raw_html: str) -> str:
+    """Removes scripts, styles, and extra whitespace to save tokens/speed up Groq."""
+    soup = BeautifulSoup(raw_html, "html.parser")
+    for script_or_style in soup(["script", "style", "meta", "link", "noscript"]):
+        script_or_style.decompose()
+    text = soup.get_text(separator=" ")
+    # Clean up massive whitespace gaps
+    return re.sub(r'\s+', ' ', text).strip()[:7000]
 
 # --- TOOLS ---
 
@@ -62,12 +49,12 @@ def scrape_listing(url: str) -> str:
     scraper_key = os.getenv("SCRAPER_API_KEY")
     if not scraper_key: return "Error: Missing API Key"
     
-    # We use premium for the main listing to ensure we get the price/details
-    payload = {'api_key': scraper_key, 'url': url, 'premium': 'true', 'autoparse': 'true'}
+    payload = {'api_key': scraper_key, 'url': url, 'premium': 'true'}
     try:
         response = requests.get('http://api.scraperapi.com', params=payload, timeout=30)
-        # We only return the first 10k chars to avoid overwhelming the LLM context
-        return response.text[:10000] if response.status_code == 200 else f"Scraper Error: {response.status_code}"
+        if response.status_code == 200:
+            return clean_html(response.text)
+        return f"Scraper Error: {response.status_code}"
     except Exception as e:
         return f"Conn Error: {str(e)}"
 
@@ -77,61 +64,63 @@ class SearchDealsInput(BaseModel):
 @tool(args_schema=SearchDealsInput)
 @lru_cache(maxsize=100)
 def search_better_deals(query: str) -> str:
-    """Searches Amazon for alternatives. Use this to find better prices."""
+    """Searches Amazon for alternatives."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
     search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
     
-    # Fast datacenter IPs for search results
-    payload = {'api_key': scraper_key, 'url': search_url, 'premium': 'false', 'autoparse': 'true'}
+    payload = {'api_key': scraper_key, 'url': search_url, 'premium': 'false'}
     try:
         response = requests.get('http://api.scraperapi.com', params=payload, timeout=30)
-        return response.text[:10000]
-    except Exception:
+        if response.status_code == 200:
+            return clean_html(response.text)
         return "Search failed."
+    except Exception:
+        return "Search error."
 
 # --- AGENT SETUP ---
 
-# Optimized for speed and large context handling
 llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
     model="llama-3.3-70b-versatile",
-    temperature=0.2,
-    request_timeout=60.0 # Critical for avoiding the "Connection error"
+    temperature=0.1, # Lower temperature = more focus, less rambling
+    request_timeout=60.0
 )
 
 tools = [scrape_listing, search_better_deals]
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are The Fantastic Claw, an expert Amazon deal hunter. 
+    ("system", """You are The Fantastic Claw. 
+    1. Scrape the URL. Extract Product Name & Price.
+    2. Search for the same product to find lower prices.
+    3. Compare everything. 
+    4. Provide 2 alternative links using [Name](https://www.amazon.com/dp/ASIN).
     
-    PROCESS:
-    1. Scrape the user's URL. Extract the product name and current price.
-    2. ALWAYS use 'search_better_deals' with the product name to find lower prices.
-    3. Compare results. If the user's link is expensive, point it out.
-    4. MANDATORY: Provide 2 alternative links using [Product Name](https://www.amazon.com/dp/ASIN).
-    
-    Tone: Witty, sharp, and profit-focused. Use emojis. 🦀"""),
+    BE CONCISE. NO YAPPING. JUST THE DEALS. 🦀"""),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
 
 agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=5)
+agent_executor = AgentExecutor(
+    agent=agent, 
+    tools=tools, 
+    verbose=True, 
+    max_iterations=3, # Stops the agent from looping forever
+    handle_parsing_errors=True # Crucial for speed
+)
 
-# --- LOGIC & ENDPOINTS ---
+# --- ENDPOINTS ---
 
 @app.post("/trigger-claw")
 async def trigger_agent(url: str):
     try:
-        # We increase the timeout here for the agent execution itself
-        response = agent_executor.invoke({"input": f"Analyze this: {url}"})
+        response = agent_executor.invoke({"input": f"Analyze: {url}"})
         return {"result": response["output"]}
     except Exception as e:
-        print(f"Error: {traceback.format_exc()}")
+        # Check logs for the specific error
+        print(f"CRASH LOG: {traceback.format_exc()}")
         return JSONResponse(status_code=500, content={"error": "The Claw is jammed. Check logs."})
 
 @app.get("/health")
 def health():
     return {"status": "online"}
-
-# (Include your existing X-webhook and CRC verification code here as previously written)
