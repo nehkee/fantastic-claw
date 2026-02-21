@@ -1,6 +1,9 @@
 import os
 import re
 import traceback
+import requests
+import hmac
+import hashlib
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
@@ -17,18 +20,21 @@ from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import tool
 
-import requests
-import tweepy
-
 load_dotenv()
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/static", StaticFiles(directory="."), name="static")
 
-@app.get("/")
-def get_ui():
-    return FileResponse("index.html")
+# --- ENVIRONMENT VARIABLES ---
+COINBASE_COMMERCE_API_KEY = os.getenv("COINBASE_COMMERCE_API_KEY")
+COINBASE_WEBHOOK_SECRET = os.getenv("COINBASE_WEBHOOK_SECRET")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+# --- MOCK DATABASE ---
+# In production, replace this with PostgreSQL or Redis so data persists across server restarts
+user_scan_counts = {}
+pro_users = set()
 
 # --- UTILITY: DATA EXTRACTION ---
 def extract_urls(text: str) -> list:
@@ -41,10 +47,9 @@ def clean_html_for_ai(raw_html: str) -> str:
     for element in soup(["script", "style", "nav", "footer", "header", "noscript"]):
         element.decompose()
     text = soup.get_text(separator=" ")
-    return re.sub(r'\s+', ' ', text).strip()[:4000] # Cut down to 4k to save tokens!
+    return re.sub(r'\s+', ' ', text).strip()[:4000]
 
 # --- TOOLS ---
-
 @tool
 @lru_cache(maxsize=100)
 def scrape_listing(url: str) -> str:
@@ -81,8 +86,6 @@ def search_better_deals(query: str) -> str:
         return f"Search Exception: {str(e)}"
 
 # --- AGENT SETUP ---
-
-# Using the lightning-fast, highly efficient 8B model to reset your rate limits
 llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
     model="llama-3.1-8b-instant",
@@ -125,75 +128,131 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(
-    agent=agent, 
-    tools=tools, 
-    verbose=True, 
-    max_iterations=4,
-    handle_parsing_errors=True
-)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=4, handle_parsing_errors=True)
+
+
+# --- COINBASE COMMERCE LOGIC ---
+def generate_usdc_invoice(chat_id: int, amount_usd: float):
+    """Generates a Coinbase Commerce checkout link pegged to USD"""
+    url = "https://api.commerce.coinbase.com/charges"
+    
+    payload = {
+        "name": "Fantastic Claw - Pro Tier",
+        "description": "1 Month Unlimited Scans",
+        "pricing_type": "fixed_price",
+        "local_price": {
+            "amount": str(amount_usd),
+            "currency": "USD"
+        },
+        "metadata": {
+            "chat_id": str(chat_id) # Embed the Telegram ID to verify who paid later
+        }
+    }
+    
+    headers = {
+        "X-CC-Api-Key": COINBASE_COMMERCE_API_KEY,
+        "X-CC-Version": "2018-03-22",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        data = response.json()
+        
+        checkout_url = data["data"]["hosted_url"]
+        msg = f"*Upgrade to Pro*\n\nYour 3 free scans have been exhausted. Pay exactly `${amount_usd} USDC` via Coinbase to unlock unlimited scans.\n\n[Click here to pay securely]({checkout_url})"
+        send_telegram_message(chat_id, msg)
+        
+    except Exception as e:
+        print(f"Coinbase API Error: {e}")
+
+@app.post("/coinbase-webhook")
+async def coinbase_webhook(request: Request):
+    """Listens for the blockchain confirmation from Coinbase"""
+    payload_body = await request.body()
+    signature = request.headers.get("X-CC-Webhook-Signature", "")
+    
+    try:
+        # Security: Prevent fake payment payloads
+        mac = hmac.new(COINBASE_WEBHOOK_SECRET.encode('utf-8'), payload_body, hashlib.sha256)
+        if not hmac.compare_digest(mac.hexdigest(), signature):
+            return JSONResponse(status_code=400, content={"error": "Invalid signature"})
+            
+        data = await request.json()
+        event_type = data.get("event", {}).get("type")
+        
+        # "charge:confirmed" means the USDC has cleared on the blockchain
+        if event_type == "charge:confirmed":
+            charge_data = data.get("event", {}).get("data", {})
+            chat_id_str = charge_data.get("metadata", {}).get("chat_id")
+            
+            if chat_id_str:
+                chat_id = int(chat_id_str)
+                
+                # Update the database to mark user as PRO
+                pro_users.add(chat_id)
+                
+                # Ping the user in Telegram automatically
+                send_telegram_message(chat_id, "*Payment Confirmed!*\n\nYou are now a Fantastic Claw PRO user. Your API limits have been removed. Happy hunting!")
+                
+        return {"status": "ok"}
+        
+    except Exception as e:
+        print(f"Webhook Error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 # --- TELEGRAM LOGIC ---
-
 def send_telegram_message(chat_id: int, text: str):
-    """Helper function to push messages to Telegram"""
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token:
-        print("Error: TELEGRAM_BOT_TOKEN missing")
-        return
-        
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    # We disable web page preview so the chat isn't cluttered with massive link cards
-    payload = {
-        "chat_id": chat_id, 
-        "text": text, 
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": True 
-    }
-    try:
-        requests.post(url, json=payload)
-    except Exception as e:
-        print(f"Telegram API Error: {e}")
+    if not TELEGRAM_BOT_TOKEN: return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = { "chat_id": chat_id, "text": text, "parse_mode": "Markdown", "disable_web_page_preview": True }
+    requests.post(url, json=payload)
 
 def process_telegram_query(chat_id: int, text: str):
-    """The background task that runs the AI without timing out the webhook"""
+    # 1. Check the Paywall first
+    if chat_id not in pro_users:
+        scans_used = user_scan_counts.get(chat_id, 0)
+        
+        # Trigger paywall on the 4th scan
+        if scans_used >= 3:
+            generate_usdc_invoice(chat_id, 15.00)
+            return
+            
+        # Increment the user's scan count
+        user_scan_counts[chat_id] = scans_used + 1
+
+    # 2. Extract URLs and analyze
     urls = extract_urls(text)
     
     if not urls:
-        send_telegram_message(chat_id, "🦀 *Awaiting Protocol...*\nPlease send a valid product URL for deep-scan extraction.")
+        msg = "*Awaiting Protocol...*\nPlease send a valid product URL for deep-scan extraction."
+        if chat_id not in pro_users:
+            msg += f"\n_(Free scans remaining: {3 - user_scan_counts.get(chat_id, 0)})_"
+        send_telegram_message(chat_id, msg)
         return
         
     url = urls[0]
-    
-    # Send a loading message so the user knows the bot is working
-    send_telegram_message(chat_id, "🔄 *Tunnel Established*\nBypassing anti-bot protocols and consulting the LLM...\n_This usually takes 10-15 seconds._")
+    send_telegram_message(chat_id, "*Tunnel Established*\nBypassing anti-bot protocols and consulting the LLM...\n_This usually takes 10-15 seconds._")
     
     try:
         response = agent_executor.invoke({"input": f"Perform a professional flip analysis on: {url}"})
-        result_text = response["output"]
-        send_telegram_message(chat_id, result_text[:4000]) # Telegram max is 4096
+        send_telegram_message(chat_id, response["output"][:4000]) 
     except Exception as e:
-        error_msg = f"⚠️ *CRITICAL EXCEPTION*\n\nThe Claw jammed. Check target URL integrity.\n`{str(e)}`"
-        send_telegram_message(chat_id, error_msg)
+        send_telegram_message(chat_id, f"*CRITICAL EXCEPTION*\n\nThe Claw jammed. Check target URL integrity.\n`{str(e)}`")
 
 @app.post("/telegram-webhook")
 async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
-    """Receives the instant ping from Telegram and hands it off to the background"""
     data = await request.json()
-    
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
         text = data["message"]["text"]
-        
-        # Add the heavy lifting to the background task queue
         background_tasks.add_task(process_telegram_query, chat_id, text)
-        
-    # Return 200 OK instantly to keep Telegram happy!
     return {"status": "ok"}
 
 
 # --- WEB/UI ENDPOINTS ---
-
 @app.post("/trigger-claw")
 async def trigger_agent(url: str):
     try:
