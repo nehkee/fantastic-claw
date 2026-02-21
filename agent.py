@@ -88,7 +88,8 @@ def scrape_listing(url: str) -> str:
 # 2. Your Search Tool
 @tool
 def search_better_deals(query: str) -> str:
-    """Searches Amazon for products based on a keyword query to find alternative deals."""
+    """Searches Amazon for products to find alternative deals. 
+    You MUST pass a specific 'query' string argument to search for (e.g., "vintage chair")."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
     
     if not scraper_key:
@@ -128,8 +129,8 @@ prompt = ChatPromptTemplate.from_messages([
     
     CRITICAL RULES:
     1. First, use `scrape_listing` to analyze the user's provided URL. 
-    2. If the item is a bad flip, figure out its category.
-    3. Use the `search_better_deals` tool to search that category.
+    2. If the item is a bad flip, figure out its general category (e.g., "gaming headset").
+    3. You MUST then use the `search_better_deals` tool. When calling it, you MUST provide the 'query' argument with that category name.
     4. Review the search results and pick 1 or 2 cheaper alternatives.
     5. IMPORTANT FORMATTING: You MUST provide a direct link to your alternative recommendations using standard Markdown format. Construct the Amazon link using the ASIN like this: [Product Name](https://www.amazon.com/dp/ASIN)
     6. Keep your final response witty, concise, and highlight the estimated profit margin! 🦀"""),
