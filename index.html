@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Fantastic Claw — Deal Finder</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <style>
     :root {
       --bg: #0f1724; 
@@ -15,11 +18,10 @@
       --glass-hover: rgba(255, 255, 255, 0.08);
       --success: #18c78b; 
       --danger: #ff6b6b; 
-      --maxw: 800px; /* Slightly narrower for better readability */
+      --maxw: 800px;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* OVERFLOW FIX: Use min-height and remove align-items: center */
     * { box-sizing: border-box; }
     html, body { min-height: 100vh; margin: 0; }
     body {
@@ -33,23 +35,19 @@
 
     .wrap { width: 100%; max-width: var(--maxw); display: flex; flex-direction: column; gap: 24px; }
     
-    /* Header */
     header { display: flex; align-items: center; gap: 18px; margin-bottom: 8px; }
     .logo { width: 64px; height: 64px; border-radius: 14px; background: var(--accent-grad); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 24px rgba(255, 122, 24, 0.25); }
     h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     p.lead { margin: 4px 0 0 0; color: var(--muted); font-size: 14px; max-width: 500px; }
 
-    /* Cards */
     .card { background: var(--card); border-radius: 16px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.03); }
     .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
     .card-title { font-weight: 700; font-size: 16px; color: #fff; }
     
-    /* Forms & Inputs */
     .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
     input.url { flex: 1; padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 14px; transition: all 0.2s; }
     input.url:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.15); }
     
-    /* Buttons */
     button { transition: all 0.2s ease; font-family: inherit; font-size: 14px; }
     button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
     button.primary { background: var(--accent-grad); border: none; color: #fff; padding: 14px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 61, 129, 0.2); }
@@ -57,7 +55,6 @@
     button.ghost { background: var(--glass); border: 1px solid rgba(255,255,255,0.05); color: #e6eef8; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; }
     button.ghost:hover:not(:disabled) { background: var(--glass-hover); }
 
-    /* Status & Spinner */
     .status-area { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .status-left { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
     .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 20px; background: var(--glass); border: 1px solid rgba(255,255,255,0.05); }
@@ -66,11 +63,17 @@
     .spinner.active { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Output */
-    pre.output { white-space: pre-wrap; background: #07101a; padding: 16px; border-radius: 10px; color: #a5d2ff; border: 1px solid rgba(255,255,255,0.04); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; line-height: 1.6; min-height: 100px; margin: 0 0 16px 0; overflow-x: auto; }
+    /* NEW STYLES FOR THE FORMATTED AI OUTPUT */
+    .output-formatted { background: #07101a; padding: 20px; border-radius: 10px; color: #a5d2ff; border: 1px solid rgba(255,255,255,0.04); font-size: 15px; line-height: 1.6; min-height: 100px; margin: 0 0 16px 0; overflow-x: auto; }
+    .output-formatted p { margin-top: 0; margin-bottom: 12px; }
+    .output-formatted p:last-child { margin-bottom: 0; }
+    .output-formatted ul, .output-formatted ol { margin-top: 0; margin-bottom: 12px; padding-left: 20px; }
+    .output-formatted strong { color: #ffffff; font-weight: 700; }
+    .output-formatted a { color: var(--accent); text-decoration: none; font-weight: 700; border-bottom: 1px solid rgba(255, 122, 24, 0.3); transition: all 0.2s; }
+    .output-formatted a:hover { color: #ff3d81; border-bottom-color: #ff3d81; }
+    
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    /* History */
     .history { margin-top: 10px; }
     .hist-item { background: var(--glass); border: 1px solid rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.2s; }
     .hist-item:hover { background: var(--glass-hover); }
@@ -126,7 +129,7 @@
         <div class="muted">Powered by LangChain</div>
       </div>
       
-      <pre id="output" class="output">Awaiting instructions...</pre>
+      <div id="output" class="output-formatted">Awaiting instructions...</div>
 
       <div class="actions">
         <button id="copy-btn" class="ghost">Copy Results</button>
@@ -199,25 +202,23 @@
       }
     }
 
-    // THE UPDATED RENDER OUTPUT FUNCTION
+    // THE MAGIC FIX: We use marked.parse() to safely turn the AI's markdown into perfect HTML
     function renderOutput(text) {
-      // 1. Escape basic HTML to prevent code injection
-      let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      
-      // 2. Find Markdown links [Text](URL) and convert them to clickable HTML links
-      const htmlText = safeText.replace(
-        /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, 
-        '<a href="$2" target="_blank" style="color: var(--accent); text-decoration: underline; font-weight: bold;">$1</a>'
-      );
-      
-      // 3. Render it to the screen using innerHTML instead of textContent
-      $output.innerHTML = htmlText;
+      // Configure marked to open links in a new tab
+      marked.use({
+        renderer: {
+          link({ href, title, text }) {
+            return `<a target="_blank" href="${href}" title="${title || ''}">${text}</a>`;
+          }
+        }
+      });
+      $output.innerHTML = marked.parse(text);
     }
 
     function pushHistory(item) {
       const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
       items.unshift(item)
-      if(items.length > 5) items.pop() // Keep last 5
+      if(items.length > 5) items.pop()
       localStorage.setItem('fc_history', JSON.stringify(items))
       renderHistory()
     }
@@ -236,7 +237,6 @@
         const div = document.createElement('div')
         div.className = 'hist-item'
         
-        // Clean up URL for display
         const displayUrl = it.url.replace(/^https?:\/\//, '').split('?')[0];
 
         div.innerHTML = `
@@ -251,7 +251,6 @@
         $historyList.appendChild(div)
       })
 
-      // Attach handlers
       $historyList.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
         const idx = e.currentTarget.dataset.idx
         const items = JSON.parse(localStorage.getItem('fc_history')||'[]')
@@ -267,7 +266,9 @@
     async function analyze(url){
       if(!url) return alert('Please enter a URL first.')
       setBusy(true)
-      renderOutput('Scraping page and generating AI analysis...\nThis usually takes 5-15 seconds.')
+      
+      // Temporarily write plain text while loading
+      $output.innerHTML = '<p>Scraping page and generating AI analysis...</br>This usually takes 5-15 seconds.</p>'
       
       try {
         const res = await fetch(api.trigger + '?url=' + encodeURIComponent(url), {method:'POST'})
@@ -275,20 +276,20 @@
         
         const data = await res.json()
         const result = (data.result || data.output || JSON.stringify(data, null, 2))
+        
+        // Render the final markdown result
         renderOutput(result)
         pushHistory({url, result, at: Date.now()})
       } catch(err) {
         console.error(err)
-        renderOutput('⚠️ Error: ' + (err.message || err))
+        $output.innerHTML = `<p style="color: var(--danger);">⚠️ Error: ${err.message || err}</p>`
       } finally { 
         setBusy(false) 
       }
     }
 
-    // Event Listeners
     $analyze.addEventListener('click', () => analyze($url.value.trim()))
     
-    // Allow pressing "Enter" in the input field to trigger scan
     $url.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') analyze($url.value.trim())
     })
@@ -300,7 +301,8 @@
     })
 
     $copy.addEventListener('click', () => {
-      navigator.clipboard.writeText($output.textContent).then(() => {
+      // Copy plain text, not HTML
+      navigator.clipboard.writeText($output.innerText).then(() => {
         const originalText = $copy.textContent;
         $copy.textContent = '✓ Copied!';
         setTimeout(() => $copy.textContent = originalText, 2000);
@@ -308,14 +310,14 @@
     })
 
     $tweet.addEventListener('click', () => {
-      const text = encodeURIComponent($output.textContent.substring(0,240) + '...\n\nAnalyzed by The Fantastic Claw 🦀')
+      const text = encodeURIComponent($output.innerText.substring(0,240) + '...\n\nAnalyzed by The Fantastic Claw 🦀')
       window.open(`https://x.com/intent/tweet?text=${text}`, '_blank')
     })
 
     $download.addEventListener('click', () => {
       const blob = new Blob([JSON.stringify({
         url: $url.value,
-        result: $output.textContent,
+        result: $output.innerText,
         timestamp: new Date().toISOString()
       }, null, 2)], {type:'application/json'})
       
@@ -326,11 +328,10 @@
     })
 
     $clear.addEventListener('click', () => { 
-      $output.textContent = 'Awaiting instructions...';
+      $output.innerHTML = 'Awaiting instructions...';
       $url.value = '';
     })
 
-    // Init
     checkHealth(); 
     renderHistory();
   </script>
