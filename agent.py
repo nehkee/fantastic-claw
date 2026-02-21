@@ -89,6 +89,34 @@ def scrape_listing(url: str) -> str:
             
     except Exception as e:
         return f"Error scraping the page: {str(e)}"
+
+    @tool
+def search_better_deals(query: str) -> str:
+    """Searches Amazon for products based on a keyword query to find alternative deals."""
+    scraper_key = os.getenv("SCRAPER_API_KEY")
+    
+    if not scraper_key:
+        return "Error: SCRAPER_API_KEY is missing."
+        
+    # Format the search query into an Amazon search URL
+    # e.g., "vintage chair" becomes "https://www.amazon.com/s?k=vintage+chair"
+    search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
+    
+    payload = {
+        'api_key': scraper_key, 
+        'url': search_url, 
+        'premium': 'true',
+        'autoparse': 'true' # This will automatically parse the search results page!
+    }
+    
+    try:
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=45)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"Search blocked: {response.status_code}"
+    except Exception as e:
+        return f"Search error: {str(e)}"
 # 2. Configure the Agent
 # 1. Define the LLM engine
 llm = ChatOpenAI(
@@ -97,17 +125,19 @@ llm = ChatOpenAI(
     model="openrouter/free"
 )
 
-# 2. Define the tools the agent can use
-tools = [scrape_listing]
+# 2. Define the tools the agent can use (Now there are two!)
+tools = [scrape_listing, search_better_deals]
 
 # 3. Define the instructions (prompt)
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are The Fantastic Claw on X, a bot that analyzes product listings. Keep responses concise (280 chars) and witty.
+    ("system", """You are The Fantastic Claw on X, a bot that analyzes product listings.
     
     CRITICAL RULES:
-    1. ONLY analyze based on the actual text and data extracted by your web scraping tool.
-    2. If the scraper does not return a specific price or product name, DO NOT guess or make up hypothetical numbers. 
-    3. If the data is missing, simply reply: "My claws couldn't grab the price tag on this one! The site might be blocking my view. 🦀" """),
+    1. First, use `scrape_listing` to analyze the user's provided URL. 
+    2. If the item is a bad flip (too expensive, no margin), figure out what category the item is (e.g., "gaming headset").
+    3. Use the `search_better_deals` tool to search that category.
+    4. Review the search results and pick 1 or 2 cheaper alternatives that look like better flips.
+    5. Keep your final response witty, concise, and include the names/prices of your alternative recommendations! 🦀"""),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
