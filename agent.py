@@ -63,19 +63,24 @@ twitter_client = tweepy.Client(
 # 1. Your Scraping Tool
 @tool
 def scrape_listing(url: str) -> str:
-    """Scrapes a webpage to extract product details, prices, and descriptions."""
-    # Prepend the Jina Reader URL to the target URL
-    jina_url = f"https://r.jina.ai/{url}"
+    """Scrapes an Amazon or marketplace webpage to extract product details and prices."""
+    scraper_key = os.getenv("SCRAPER_API_KEY")
     
-    headers = {
-        # Tells Jina we just want clean text/markdown optimized for AI
-        'Accept': 'text/plain', 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    # If no key is found, fall back gracefully
+    if not scraper_key:
+        return "Error: SCRAPER_API_KEY is missing from environment variables."
+        
+    # We tell ScraperAPI to use residential IPs and automatically parse the product data
+    payload = {
+        'api_key': scraper_key, 
+        'url': url, 
+        'premium': 'true',   # Bypasses intense bot-blockers like Amazon
+        'autoparse': 'true'  # Automatically converts Amazon HTML into clean text
     }
     
     try:
-        # We increase the timeout slightly because Jina is rendering a real browser
-        response = requests.get(jina_url, headers=headers, timeout=15)
+        # Request goes through ScraperAPI's proxy network
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=45)
         
         if response.status_code == 200:
             return response.text
@@ -84,38 +89,6 @@ def scrape_listing(url: str) -> str:
             
     except Exception as e:
         return f"Error scraping the page: {str(e)}"
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        # ... the rest of your BeautifulSoup code ...
-        try:
-            response = requests.get(url, headers=headers, timeout=10, verify=True)
-            response.raise_for_status()
-        except requests.exceptions.SSLError:
-            # Try again without SSL verification (some test sites have missing CA chains)
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-            insecure_note = " (SSL verify disabled)"
-            response = requests.get(url, headers=headers, timeout=10, verify=False)
-            response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Extract title
-        title = soup.find("h1") or soup.find("title")
-        title_text = title.get_text(strip=True)[:100] if title else "Unknown"
-        
-        # Extract price
-        price_text = "N/A"
-        for element in soup.find_all(["span", "div", "p"]):
-            text = element.get_text()
-            if "$" in text:
-                price_match = re.search(r"\$[\d,]+\.?\d*", text)
-                if price_match:
-                    price_text = price_match.group(0)
-                    break
-        
-        return f"Title: {title_text} | Price: {price_text} | URL: {url}{insecure_note}"
-    except Exception as e:
-        return f"Error scraping URL: {str(e)}"
-
 # 2. Configure the Agent
 # 1. Define the LLM engine
 llm = ChatOpenAI(
