@@ -32,41 +32,38 @@ def get_ui():
 
 # --- UTILITY: DATA EXTRACTION ---
 def clean_html_for_ai(raw_html: str) -> str:
-    """Strips the junk but keeps the meat: Title, Price, and Features."""
+    """Strips the junk but keeps the meat: Title, Price, and ASINs."""
     soup = BeautifulSoup(raw_html, "html.parser")
-    # Remove heavy code but leave the core product content
-    for element in soup(["script", "style", "nav", "footer", "header"]):
+    for element in soup(["script", "style", "nav", "footer", "header", "noscript"]):
         element.decompose()
     
-    # Target common Amazon/Marketplace body areas
+    # We specifically look for ASINs in the text or links to help the agent build URLs
     text = soup.get_text(separator=" ")
-    return re.sub(r'\s+', ' ', text).strip()[:8000]
+    return re.sub(r'\s+', ' ', text).strip()[:10000]
 
 # --- TOOLS ---
 
 @tool
 @lru_cache(maxsize=100)
 def scrape_listing(url: str) -> str:
-    """Scrapes product details and pricing from a URL. Use this first to understand the item."""
+    """Scrapes product details and pricing from a URL."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
-    if not scraper_key: return "Error: Missing SCRAPER_API_KEY"
+    if not scraper_key: return "Error: Missing API Key"
     
     payload = {'api_key': scraper_key, 'url': url, 'premium': 'true', 'autoparse': 'true'}
     try:
         response = requests.get('http://api.scraperapi.com', params=payload, timeout=40)
-        if response.status_code == 200:
-            return clean_html_for_ai(response.text)
-        return f"Scraper got stuck (Status: {response.status_code}). Please try again."
+        return clean_html_for_ai(response.text) if response.status_code == 200 else "Scrape failed."
     except Exception as e:
-        return f"Connection error during scraping: {str(e)}"
+        return f"Error: {str(e)}"
 
 class SearchDealsInput(BaseModel):
-    query: str = Field(description="The product name or category to search for better prices.")
+    query: str = Field(description="The product name/category to search.")
 
 @tool(args_schema=SearchDealsInput)
 @lru_cache(maxsize=100)
 def search_better_deals(query: str) -> str:
-    """Searches for cheaper versions of the same product to calculate flip potential."""
+    """Searches for alternatives. Returns product names, prices, and ASIN IDs."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
     search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
     
@@ -75,37 +72,48 @@ def search_better_deals(query: str) -> str:
         response = requests.get('http://api.scraperapi.com', params=payload, timeout=40)
         return clean_html_for_ai(response.text)
     except Exception:
-        return "Search failed to find alternatives."
+        return "Search failed."
 
 # --- AGENT SETUP ---
 
 llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
     model="llama-3.3-70b-versatile",
-    temperature=0.3, # Slight creativity for wit, but stays grounded
-    request_timeout=90.0 # Gave it 1.5 mins to handle slow scraper responses
+    temperature=0.1, 
+    request_timeout=90.0
 )
 
 tools = [scrape_listing, search_better_deals]
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are 'The Fantastic Claw', the world's sharpest deal analyst on X.
+    ("system", """You are a professional Retail Arbitrage Analyst. 
+    Analyze the provided product and find cheaper alternatives to determine flip potential.
     
-    YOUR MISSION:
-    1. ANALYZE: Use scrape_listing to get the product name and its CURRENT price.
-    2. HUNT: Use search_better_deals to find at least 2 cheaper alternatives or the 'market rate'.
-    3. CALCULATE: Determine if the original link is a 'Good Flip' by comparing it to the alternatives. Estimate the profit margin.
-    4. REPORT: Give a witty, high-energy review. 
+    OUTPUT REQUIREMENTS:
+    1. Use a clean, professional spatial arrangement (Markdown headers and lists).
+    2. Do NOT use emojis.
+    3. For every alternative, you MUST provide the Price and a Direct Link.
+    4. Construct links using: [Product Name](https://www.amazon.com/dp/ASIN)
     
-    MANDATORY OUTPUT FORMAT:
-    - 🦀 **The Verdict**: (Good Flip/Bad Flip/Fair Price)
-    - 💰 **Profit Potential**: (Explain the markup/savings)
-    - 🔍 **Analysis**: (Quick witty review of the product)
-    - 🚀 **Cheaper Alternatives**: 
-        1. [Product Name](https://www.amazon.com/dp/ASIN)
-        2. [Product Name](https://www.amazon.com/dp/ASIN)
+    STRUCTURE:
+    ### Product Verdict
+    (Statement of Good/Bad Flip)
     
-    Keep it under 280 characters if possible for X, but provide the full analysis for the UI!"""),
+    ### Financial Breakdown
+    - Original Price:
+    - Current Deal:
+    - Estimated Market Value:
+    - Potential Profit:
+    
+    ### Market Analysis
+    (Witty professional summary of demand and quality)
+    
+    ### Comparative Deals
+    | Product Name | Price | Link |
+    |--------------|-------|------|
+    | Alternative 1 | $XX.XX | [Link] |
+    | Alternative 2 | $XX.XX | [Link] |
+    """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
@@ -115,7 +123,7 @@ agent_executor = AgentExecutor(
     agent=agent, 
     tools=tools, 
     verbose=True, 
-    max_iterations=8, # INCREASED: Gives the AI more room to actually finish the search and comparison
+    max_iterations=10, 
     handle_parsing_errors=True
 )
 
@@ -124,13 +132,11 @@ agent_executor = AgentExecutor(
 @app.post("/trigger-claw")
 async def trigger_agent(url: str):
     try:
-        print(f"The Claw is grabbing: {url}")
-        response = agent_executor.invoke({"input": f"Analyze this listing for flip potential: {url}"})
+        response = agent_executor.invoke({"input": f"Perform a professional flip analysis on: {url}"})
         return {"result": response["output"]}
     except Exception:
-        print(f"CRASH LOG: {traceback.format_exc()}")
-        return JSONResponse(status_code=500, content={"error": "The Claw is jammed. The page might be too heavy or the API is timing out."})
+        return JSONResponse(status_code=500, content={"error": "Analysis timed out. Please try again."})
 
 @app.get("/health")
 def health():
-    return {"status": "The Fantastic Claw is online and hungry for deals! 🦀"}
+    return {"status": "Online"}
