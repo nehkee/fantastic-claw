@@ -63,13 +63,27 @@ twitter_client = tweepy.Client(
 # 1. Your Scraping Tool
 @tool
 def scrape_listing(url: str) -> str:
-    """Scrapes a webpage to extract product details."""
-    # Put on a disguise so websites think this is a real browser
+    """Scrapes a webpage to extract product details, prices, and descriptions."""
+    # Prepend the Jina Reader URL to the target URL
+    jina_url = f"https://r.jina.ai/{url}"
+    
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
+        # Tells Jina we just want clean text/markdown optimized for AI
+        'Accept': 'text/plain', 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     
+    try:
+        # We increase the timeout slightly because Jina is rendering a real browser
+        response = requests.get(jina_url, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"Scraper got blocked with status code: {response.status_code}"
+            
+    except Exception as e:
+        return f"Error scraping the page: {str(e)}"
     try:
         response = requests.get(url, headers=headers, timeout=10)
         # ... the rest of your BeautifulSoup code ...
