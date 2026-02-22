@@ -125,22 +125,22 @@ prompt = ChatPromptTemplate.from_messages([
     Analyze the product, find alternatives, and calculate TRUE NET profit.
     
     PROTOCOLS:
-    1. Always use `get_historical_price` if an ASIN is found.
-    2. Always use `calculate_true_net_margin` using the alternative's price as 'cost_of_goods', the target price as 'sale_price', and an estimated weight.
+    1. NEVER use markdown tables. They break the mobile UI.
+    2. ALWAYS use bullet points for lists.
+    3. CLEAN ALL URLs. Remove tracking parameters (delete everything after the '?' in the link).
+    4. Make links short text! Example: [View Deal](url)
     
-    OUTPUT FORMAT (Markdown, NO Emojis):
+    OUTPUT FORMAT:
     ### Net Financial Breakdown
-    - Acquisition Cost:
-    - Target Sale Price:
-    - **True Net Profit (After FBA):**
+    • Acquisition Cost: $XX.XX
+    • Target Sale Price: $XX.XX
+    • **True Net Profit:** $XX.XX
     
     ### Historical Context
     (Summarize 90-day Keepa data)
     
     ### Source Links
-    | Item | Price | Link |
-    |------|-------|------|
-    | Alt 1| $XX.XX| [Link](url) |
+    • $XX.XX - [Product Name](url)
     """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
