@@ -8,21 +8,21 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* Obsidian & Neon Palette */
-      --bg-base: #02040a;
-      --bg-panel: #0d1117;
-      --bg-surface: #161b22;
-      --primary: #00e5ff; /* Cyber Cyan */
-      --primary-dim: rgba(0, 229, 255, 0.15);
-      --secondary: #b300ff; /* Deep Neon Purple */
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
-      --border: rgba(240, 246, 252, 0.1);
-      --border-highlight: rgba(0, 229, 255, 0.4);
+      /* Palantir-Inspired Enterprise Palette */
+      --bg-base: #0f1115;        /* Deep Charcoal */
+      --bg-panel: #16191e;       /* Gunmetal Grey */
+      --bg-surface: #1e2228;     /* Slate Layer */
+      --primary: #58a6ff;        /* Steel Blue (Brilliant highlight) */
+      --primary-dim: rgba(88, 166, 255, 0.1);
+      --accent: #8b949e;         /* Neutral Grey */
+      --text-main: #f0f6fc;      /* Off-White */
+      --text-muted: #8b949e;     /* Subdued Grey */
+      --border: #30363d;         /* Subtle edge */
+      --border-highlight: #484f58;
       --success: #3fb950;
       --danger: #f85149;
     }
@@ -35,25 +35,25 @@
       font-family: 'Inter', sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
+      /* Subtle noise/gradient for "depth" */
       background-image: 
-        radial-gradient(circle at 15% 50%, rgba(179, 0, 255, 0.05), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(0, 229, 255, 0.05), transparent 25%);
+        radial-gradient(circle at 50% -20%, #1e2228, transparent 50%);
     }
 
     /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg-base); }
-    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
     /* --- NAVIGATION --- */
     nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 5%;
-      background: rgba(2, 4, 10, 0.85);
-      backdrop-filter: blur(16px);
+      padding: 16px 5%;
+      background: rgba(15, 17, 21, 0.95);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
@@ -61,405 +61,283 @@
     }
 
     .brand {
-      font-weight: 900;
-      font-size: 22px;
-      letter-spacing: -0.5px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      color: var(--text-main);
     }
     
     .brand-icon {
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-size: 26px;
+      filter: grayscale(1) brightness(1.5); /* Makes the crab look like a metallic logo */
+      font-size: 22px;
     }
 
     .nav-links { display: flex; gap: 32px; }
     .nav-links a {
       color: var(--text-muted);
       text-decoration: none;
-      font-weight: 600;
-      font-size: 13px;
+      font-weight: 500;
+      font-size: 12px;
       cursor: pointer;
-      transition: color 0.3s;
+      transition: all 0.2s;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 1px;
     }
-    .nav-links a:hover, .nav-links a.active { color: var(--text-main); }
+    .nav-links a:hover, .nav-links a.active { color: var(--primary); }
 
     .status-pill {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
-      background: rgba(63, 185, 80, 0.1);
-      border: 1px solid rgba(63, 185, 80, 0.2);
-      border-radius: 100px;
-      font-size: 11px;
+      padding: 5px 12px;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--success);
       font-family: 'JetBrains Mono', monospace;
-      letter-spacing: 1px;
     }
 
     /* --- PAGE CONTAINERS --- */
-    .page { display: none; padding: 60px 5%; min-height: 90vh; animation: fadeUp 0.4s ease-out forwards; opacity: 0; transform: translateY(15px); }
+    .page { display: none; padding: 60px 5%; min-height: 90vh; animation: fadeIn 0.3s ease-out forwards; }
     .page.active { display: block; }
-    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     /* --- HERO SECTION --- */
-    .hero { max-width: 900px; margin: 0 auto; text-align: center; }
+    .hero { max-width: 900px; margin: 0 auto; text-align: center; padding-top: 40px; }
     .hero-badge {
       display: inline-block;
-      padding: 6px 16px;
+      padding: 4px 12px;
       background: var(--primary-dim);
-      border: 1px solid var(--border-highlight);
-      border-radius: 100px;
+      border: 1px solid var(--primary);
+      border-radius: 2px;
       color: var(--primary);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.2px;
       margin-bottom: 24px;
       text-transform: uppercase;
     }
-    .hero h1 { font-size: 4rem; font-weight: 900; line-height: 1.1; letter-spacing: -2px; margin-bottom: 24px; color: #ffffff; }
-    .hero p { font-size: 1.2rem; color: var(--text-muted); line-height: 1.6; max-width: 700px; margin: 0 auto 40px; }
+    .hero h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 24px; color: #ffffff; }
+    .hero p { font-size: 1.15rem; color: var(--text-muted); line-height: 1.7; max-width: 650px; margin: 0 auto 40px; }
     
     .btn-glow {
-      background: var(--text-main);
-      color: var(--bg-base);
+      background: var(--primary);
+      color: #000;
       border: none;
-      padding: 16px 36px;
-      border-radius: 8px;
+      padding: 14px 32px;
+      border-radius: 4px;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
       cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+      transition: 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .btn-glow:hover {
-      background: var(--primary);
-      box-shadow: 0 0 30px var(--primary-dim);
-      transform: translateY(-2px);
+      background: #82bfff;
+      transform: translateY(-1px);
     }
 
     .feature-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 24px;
-      margin-top: 80px;
+      margin-top: 100px;
       text-align: left;
     }
     .feature-card {
-      background: var(--bg-surface);
+      background: var(--bg-panel);
       border: 1px solid var(--border);
       padding: 32px;
-      border-radius: 16px;
-      transition: transform 0.3s, border-color 0.3s;
+      border-radius: 8px;
+      transition: 0.3s;
     }
-    .feature-card:hover { transform: translateY(-5px); border-color: var(--border-highlight); }
-    .feature-card h3 { font-size: 1.1rem; margin-bottom: 12px; color: var(--primary); }
-    .feature-card p { font-size: 0.95rem; color: var(--text-muted); }
+    .feature-card:hover { border-color: var(--primary); background: var(--bg-surface); }
+    .feature-card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
+    .feature-card p { font-size: 0.9rem; color: var(--text-muted); }
 
-    /* --- DUAL-PANE TERMINAL --- */
+    /* --- TERMINAL INTERFACE --- */
     .terminal-container {
-      max-width: 1300px;
+      max-width: 1400px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr 350px;
+      grid-template-columns: 1fr 380px;
       gap: 24px;
-      align-items: start;
     }
 
     .terminal-main, .terminal-history {
       background: var(--bg-panel);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
 
     .terminal-header {
-      background: var(--bg-surface);
-      padding: 14px 20px;
+      background: #1e2228;
+      padding: 12px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       gap: 12px;
     }
-    .mac-dots { display: flex; gap: 8px; }
-    .mac-dots div { width: 12px; height: 12px; border-radius: 50%; }
-    .mac-dots .red { background: #ff5f56; }
-    .mac-dots .yellow { background: #ffbd2e; }
-    .mac-dots .green { background: #27c93f; }
-    .terminal-title { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+    .mac-dots { display: flex; gap: 6px; }
+    .mac-dots div { width: 10px; height: 10px; border-radius: 50%; opacity: 0.5; }
+    .mac-dots .red { background: var(--danger); }
+    .mac-dots .yellow { background: #e3b341; }
+    .mac-dots .green { background: var(--success); }
+    .terminal-title { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 
-    .terminal-body { padding: 32px; }
+    .terminal-body { padding: 40px; }
 
-    /* Search Bar */
     .search-bar {
       display: flex;
-      background: var(--bg-base);
+      background: #000;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 6px;
-      margin-bottom: 24px;
-      transition: all 0.3s;
+      border-radius: 4px;
+      padding: 4px;
+      margin-bottom: 30px;
     }
-    .search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-dim); }
+    .search-bar:focus-within { border-color: var(--primary); }
     .search-bar input {
       flex: 1;
       background: transparent;
       border: none;
       padding: 12px 16px;
       color: var(--text-main);
-      font-size: 15px;
+      font-size: 14px;
       font-family: 'JetBrains Mono', monospace;
       outline: none;
     }
     .search-bar button {
-      background: var(--text-main);
-      color: var(--bg-base);
-      border: none;
-      padding: 0 28px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 13px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 0 24px;
+      border-radius: 2px;
+      font-weight: 600;
+      font-size: 12px;
       cursor: pointer;
-      transition: background 0.2s;
+      text-transform: uppercase;
     }
-    .search-bar button:hover:not(:disabled) { background: var(--primary); }
-    .search-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .search-bar button:hover { background: var(--primary); color: #000; }
 
-    /* Output Screen */
     .output-screen {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 32px;
+      min-height: 500px;
+      max-height: 700px;
+      overflow-y: auto;
+    }
+
+    /* History Style */
+    .history-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #1e2228; }
+    .history-header h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+    .history-list { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
       background: var(--bg-base);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 28px;
-      min-height: 450px;
-      max-height: 600px;
-      overflow-y: auto;
-      font-size: 15px;
-      position: relative;
-    }
-
-    /* History Panel */
-    .history-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .history-header h3 { font-size: 14px; font-weight: 600; color: var(--text-main); }
-    .clear-history-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 11px;
+      padding: 14px;
+      border-radius: 4px;
       cursor: pointer;
       transition: 0.2s;
     }
-    .clear-history-btn:hover { border-color: var(--danger); color: var(--danger); }
+    .history-item:hover { border-color: var(--primary); background: #1c2128; }
+    .hist-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--primary); margin-bottom: 6px; }
+    .hist-url { font-size: 12px; color: var(--text-main); font-family: 'JetBrains Mono'; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .history-list {
-      padding: 16px;
-      max-height: 560px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    /* Markdown Styling Refined */
+    .output-screen h3 { color: var(--primary); margin: 30px 0 15px; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+    .output-screen strong { color: #fff; }
+    .output-screen ul { margin-left: 18px; color: var(--text-muted); }
+    .output-screen li { margin-bottom: 8px; }
 
-    .history-item {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-    .history-item:hover {
-      border-color: var(--border-highlight);
-      background: rgba(0, 229, 255, 0.02);
-      transform: translateX(4px);
-    }
-    .history-item::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0; width: 3px;
-      background: var(--primary);
-      opacity: 0;
-      transition: 0.2s;
-    }
-    .history-item:hover::before { opacity: 1; }
-    
-    .hist-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--primary); }
-    .hist-url { font-size: 13px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-
-    /* Markdown Output Styling inside Terminal */
-    .output-screen h3 { color: var(--primary); margin: 24px 0 16px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
-    .output-screen p { color: #c9d1d9; margin-bottom: 16px; }
-    .output-screen ul { margin-bottom: 16px; padding-left: 20px; color: #c9d1d9; }
-    .output-screen table { width: 100%; border-collapse: collapse; margin: 24px 0; background: var(--bg-surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
-    .output-screen th { text-align: left; padding: 14px 16px; color: var(--primary); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-    .output-screen td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: #e5e7eb; }
-    .output-screen a { color: var(--primary); text-decoration: none; border-bottom: 1px dotted var(--primary); font-weight: 600; transition: 0.2s; }
-    .output-screen a:hover { color: #fff; border-bottom-style: solid; }
-
-    /* --- DOCUMENTATION STYLING --- */
-    .docs-layout {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 60px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .sidebar { position: sticky; top: 100px; align-self: start; }
-    .sidebar h4 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-    .sidebar ul { list-style: none; margin-bottom: 40px; }
-    .sidebar li { margin-bottom: 12px; }
-    .sidebar a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-    .sidebar a:hover { color: var(--primary); }
-
+    /* --- DOCS STYLE --- */
     .docs-content {
       background: var(--bg-panel);
       padding: 60px;
-      border-radius: 20px;
+      border-radius: 8px;
       border: 1px solid var(--border);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
+    .docs-content h1 { font-size: 2.4rem; color: #fff; margin-bottom: 30px; letter-spacing: -0.5px; }
+    .docs-content h2 { font-size: 1.4rem; color: var(--primary); margin-top: 50px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .code-box { background: #000; border-left: 3px solid var(--primary); color: #c9d1d9; padding: 20px; border-radius: 4px; font-size: 13px; margin: 25px 0; }
     
-    .docs-content h1 { font-size: 2.8rem; margin-bottom: 24px; letter-spacing: -1px; color: #fff; }
-    .docs-content h2 { font-size: 1.8rem; margin: 60px 0 24px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 16px; }
-    .docs-content h3 { font-size: 1.3rem; margin: 40px 0 16px; color: var(--text-main); }
-    
-    .docs-content p { color: var(--text-muted); margin-bottom: 24px; font-size: 1.05rem; line-height: 1.8; }
-    .docs-content ul { color: var(--text-muted); margin-bottom: 30px; padding-left: 24px; font-size: 1.05rem; line-height: 1.8; }
-    .docs-content li { margin-bottom: 12px; }
-    
-    .code-box {
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      color: #79c0ff;
-      margin: 30px 0;
-      overflow-x: auto;
-      line-height: 1.6;
-    }
-    .code-comment { color: #8b949e; }
-    .code-keyword { color: #ff7b72; }
-    .code-string { color: #a5d6ff; }
-
-    /* Loaders & Empty States */
     .loader {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid var(--border-highlight);
-      border-radius: 50%;
-      border-top-color: var(--primary);
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-right: 10px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      text-align: center;
-      opacity: 0.7;
+      border: 2px solid var(--border);
+      border-top: 2px solid var(--primary);
+      width: 14px; height: 14px;
     }
 
-    @media (max-width: 1000px) {
-      .terminal-container, .docs-layout { grid-template-columns: 1fr; }
-      .terminal-history { max-height: 400px; }
-      .sidebar { display: none; }
-      .docs-content { padding: 30px; }
-    }
-    @media (max-width: 768px) {
-      .hero h1 { font-size: 2.8rem; }
-      .nav-links { display: none; }
+    @media (max-width: 1100px) {
+      .terminal-container { grid-template-columns: 1fr; }
+      .feature-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
   <nav>
-    <div class="brand"><span class="brand-icon">🦀</span> <span>FantasticClaw</span></div>
+    <div class="brand"><span class="brand-icon">🦀</span> <span>FANTASTIC CLAW</span></div>
     <div class="nav-links">
       <a onclick="showPage('home')" id="nav-home" class="active">Overview</a>
       <a onclick="showPage('scanner')" id="nav-scanner">Terminal</a>
       <a onclick="showPage('docs')" id="nav-docs">Documentation</a>
     </div>
     <div class="status-pill">
-      <div style="width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success);"></div>
-      SECURE
+      <div style="width: 5px; height: 5px; background: var(--success); border-radius: 50%;"></div>
+      SYSTEM_READY
     </div>
   </nav>
 
   <section id="home" class="page active">
     <div class="hero">
-      <div class="hero-badge">Enterprise Arbitrage Engine</div>
-      <h1>Sourcing, Perfected.<br>Margins, Maximized.</h1>
-      <p>Built exclusively for e-commerce operators, dropshippers, and retail arbitrage professionals. Stop guessing on your margins. Fantastic Claw deploys reasoning LLM agents to instantly find the absolute lowest acquisition costs for your inventory.</p>
-      <button class="btn-glow" onclick="showPage('scanner')">Launch Scanner Terminal</button>
+      <div class="hero-badge">Autonomous Market Intelligence</div>
+      <h1>Profitability, <br>Quantified.</h1>
+      <p>The industry's first Agentic reasoning engine for retail arbitrage. We combine rotating residential proxy networks with Llama-3.3 intelligence to reveal the "True Net" of every flip.</p>
+      <button class="btn-glow" onclick="showPage('scanner')">Open Command Terminal</button>
     </div>
 
     <div class="feature-grid">
       <div class="feature-card">
-        <h3>Live Market Scraping</h3>
-        <p>Bypasses extreme anti-bot protections on major marketplaces using rotating residential proxies to extract live pricing and ASINs.</p>
+        <h3>L3 Intelligence</h3>
+        <p>Utilizes advanced LLM reasoning to match identical products across disparate marketplaces, identifying hidden price floors.</p>
       </div>
       <div class="feature-card">
-        <h3>Agentic Reasoning</h3>
-        <p>Doesn't just pull data. It uses Llama-3.3 to contextually understand the item, identify identical alternative products, and calculate net flip margins.</p>
+        <h3>Secure Extraction</h3>
+        <p>Automated residential proxy rotation ensures consistent data delivery from high-protection domains like Amazon and Walmart.</p>
       </div>
       <div class="feature-card">
-        <h3>X (Twitter) Integration</h3>
-        <p>Fully equipped with Webhook listeners. Tag @FantasticClaw on X with a product URL, and receive an instant margin analysis reply.</p>
+        <h3>FBA Calculation</h3>
+        <p>Built-in logic for referral fees, storage costs, and shipping weights to provide real-time net margin percentages.</p>
       </div>
     </div>
   </section>
 
   <section id="scanner" class="page">
     <div class="terminal-container">
-      
       <div class="terminal-main">
         <div class="terminal-header">
-          <div class="mac-dots">
-            <div class="red"></div><div class="yellow"></div><div class="green"></div>
-          </div>
-          <div class="terminal-title">claw@arbitrage-server: ~/execute</div>
+          <div class="mac-dots"><div class="red"></div><div class="yellow"></div><div class="green"></div></div>
+          <div class="terminal-title">FC_EXTRACTOR_NODE_01</div>
         </div>
-        
         <div class="terminal-body">
           <div class="search-bar">
-            <input id="url-input" placeholder="Enter Target URL (Amazon/Marketplace)..." autocomplete="off" spellcheck="false" />
-            <button id="analyze-btn">EXECUTE</button>
+            <input id="url-input" placeholder="INPUT TARGET MARKETPLACE URL..." autocomplete="off" />
+            <button id="analyze-btn">SCAN</button>
           </div>
-
           <div id="output" class="output-screen">
             <div class="empty-state">
-              <span style="font-size: 24px; margin-bottom: 16px; opacity: 0.5;">🦀</span>
-              AWAITING TARGET PROTOCOL...<br>
-              Input URL to begin deep-scan extraction.
+              <div style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--text-muted);">
+                [SYSTEM] Awaiting input... <br>
+                Please provide a product listing URL to initiate analysis.
+              </div>
             </div>
           </div>
         </div>
@@ -467,223 +345,124 @@
 
       <div class="terminal-history">
         <div class="history-header">
-          <h3>Session History</h3>
+          <h3>Recent Signals</h3>
           <button class="clear-history-btn" onclick="clearHistory()">PURGE</button>
         </div>
-        <div id="history-list" class="history-list">
-          </div>
+        <div id="history-list" class="history-list"></div>
       </div>
-
     </div>
   </section>
 
   <section id="docs" class="page">
-    <div class="docs-layout">
-      <aside class="sidebar">
-        <h4>The Engine</h4>
-        <ul>
-          <li><a href="#overview">System Overview</a></li>
-          <li><a href="#react">The ReAct Paradigm</a></li>
-          <li><a href="#groq">Groq LPU Inference</a></li>
-        </ul>
-        <h4>Data Ingestion</h4>
-        <ul>
-          <li><a href="#scraping">Proxy Architecture</a></li>
-          <li><a href="#context">Context Window Mgt</a></li>
-        </ul>
-      </aside>
-
-      <main class="docs-content">
-        <h1>System Architecture & Documentation</h1>
-        <p>Fantastic Claw represents a paradigm shift from basic web scraping to autonomous, AI-driven market research. Built on the LangChain framework, it is designed specifically to calculate e-commerce profit margins with high accuracy, speed, and reliability.</p>
-
-        
-
-        <h2 id="overview">System Overview</h2>
-        <p>The application is divided into robust, isolated micro-services that prioritize asynchronous data handling and non-blocking LLM reasoning.</p>
-        <ul>
-          <li><strong>Frontend:</strong> Vanilla JS Single Page Application (SPA), rendering dynamic markdown via <code>marked.js</code> for instantaneous, lightweight DOM updates.</li>
-          <li><strong>Backend:</strong> Python-based FastAPI, providing lightning-fast, asynchronous API endpoints that handle simultaneous proxy requests without thread-locking.</li>
-          <li><strong>Agentic Framework:</strong> LangChain's <code>create_tool_calling_agent</code> engine, giving the AI the ability to autonomously trigger custom Python functions.</li>
-          <li><strong>LLM Engine:</strong> Groq API utilizing the state-of-the-art Llama-3.3 70B Versatile model.</li>
-        </ul>
-
-        <h2 id="react">The ReAct (Reason + Act) Paradigm</h2>
-        <p>Fantastic Claw operates autonomously. Instead of executing a linear, hard-coded script, the Large Language Model is provided a set of Tools and a master system prompt. Upon receiving a user's target URL, the agent enters an autonomous thought loop.</p>
-        
-        
-        
-        <p>This looping architecture allows the agent to self-correct. For example, if a broad search term fails to yield alternative products, the agent recognizes the failure and initiates a secondary search using a more refined keyword extracted from the product title.</p>
-        
-        <div class="code-box">
-<span class="code-comment"># Example of the Agent's internal logic stream:</span>
-<span class="code-keyword">Thought:</span> I need to extract the product price and details from the target URL.
-<span class="code-keyword">Action:</span> Call `scrape_listing(url)`
-<span class="code-keyword">Observation:</span> The current listed price is $65.00. The product is "Nike Air".
-<span class="code-keyword">Thought:</span> I need to find the broader market acquisition cost to calculate a reliable profit margin.
-<span class="code-keyword">Action:</span> Call `search_better_deals("Nike Air mens size 10")`
-        </div>
-
-        <h2 id="groq">Groq LPU Inference</h2>
-        <p>Traditional AI models operating on GPUs execute at roughly 20 to 40 tokens per second. In a multi-step agent loop like ReAct, this creates an agonizingly slow user experience (often exceeding 2 minutes per query).</p>
-        <p>Fantastic Claw mitigates this by relying on <strong>Groq's Language Processing Units (LPUs)</strong>. Because LPUs process text sequentially rather than parallelly, they achieve inference speeds exceeding <strong>300 tokens per second</strong>. This allows the Fantastic Claw agent to complete an 8-iteration reasoning loop in under 5 seconds, making the system bound only by the network speed of the external web scraper.</p>
-
-        <h2 id="scraping">Dual-Proxy Architecture</h2>
-        <p>Modern e-commerce sites (like Amazon) employ aggressive bot-mitigation techniques via Cloudflare and Akamai. To circumvent IP bans and CAPTCHAs, the tool architecture uses a dual-proxy strategy via ScraperAPI:</p>
-        <ul>
-          <li><strong>Deep Scraping (Target URL):</strong> Uses <code>premium=true</code> to route traffic exclusively through a rotating network of global residential IP addresses. This ensures a 99% success rate on heavily guarded individual product pages.</li>
-          <li><strong>Market Discovery (Search URL):</strong> Broad search queries are generally less guarded. We route these through standard datacenter IPs (<code>premium=false</code>) to drastically reduce latency when scanning for alternative ASINs and price floors.</li>
-        </ul>
-
-        <h2 id="context">Context Window Management</h2>
-        <p>A significant challenge in LLM-based web scraping is token exhaustion. The raw HTML from a single Amazon product page can easily exceed 200,000 characters, crashing standard LLM context windows or resulting in massive API billing costs.</p>
-        <p>Fantastic Claw employs a targeted DOM stripping mechanism utilizing the <code>BeautifulSoup</code> library before passing data to the LLM:</p>
-        
-        <div class="code-box">
-<span class="code-keyword">def</span> <span class="code-string">clean_html_for_ai</span>(raw_html: str) -> str:
-    <span class="code-comment"># Instantiate the parser</span>
-    soup = BeautifulSoup(raw_html, <span class="code-string">"html.parser"</span>)
-    
-    <span class="code-comment"># Strip heavy execution code, formatting, and structural junk</span>
-    <span class="code-keyword">for</span> element <span class="code-keyword">in</span> soup([<span class="code-string">"script"</span>, <span class="code-string">"style"</span>, <span class="code-string">"nav"</span>, <span class="code-string">"footer"</span>, <span class="code-string">"noscript"</span>]):
-        element.decompose()
-        
-    <span class="code-comment"># Collapse whitespace and hard-truncate to 10,000 characters to protect API limits</span>
-    <span class="code-keyword">return</span> re.sub(<span class="code-string">r'\s+'</span>, <span class="code-string">' '</span>, soup.get_text()).strip()[:<span class="code-string">10000</span>]
-        </div>
-      </main>
+    <div class="docs-content">
+      <h1>Intelligence Documentation</h1>
+      <p>Fantastic Claw is a high-performance market research tool designed to provide e-commerce operators with a competitive edge through autonomous data synthesis.</p>
+      
+      <h2>Technical Core</h2>
+      <p>The system leverages the ReAct (Reason + Act) loop, allowing the AI to browse the web, scrape content, and perform mathematical calculations in a single coherent stream.</p>
+      
+      <div class="code-box">
+        // Internal Agent Protocol <br>
+        1. Parse Input URL <br>
+        2. Execute Residential Proxy Scrape <br>
+        3. Identify ASIN/GTIN <br>
+        4. Cross-Reference Competitor Floor <br>
+        5. Calculate FBA True Net
+      </div>
+      
+      <h2>Latency Optimization</h2>
+      <p>By utilizing Groq's LPU (Language Processing Unit), we achieve sub-second reasoning speeds, transforming what used to be a 60-second manual research task into a 5-second automated Intel Report.</p>
     </div>
   </section>
 
   <script>
-    const api = { trigger: '/trigger-claw' };
-
     // --- Navigation Logic ---
     function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => {
-        p.classList.remove('active');
-        p.style.animation = 'none';
-        p.offsetHeight; 
-        p.style.animation = null; 
-      });
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-      
       document.getElementById(pageId).classList.add('active');
       document.getElementById('nav-' + pageId).classList.add('active');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // --- Markdown Configuration ---
     marked.setOptions({ gfm: true, breaks: true });
 
-    // --- History Management ---
+    // --- History Logic ---
     function saveToHistory(url, result) {
-      const history = JSON.parse(localStorage.getItem('fc_session_history') || '[]');
+      const history = JSON.parse(localStorage.getItem('fc_history') || '[]');
       const newItem = {
         id: Date.now().toString(),
         url: url,
         result: result,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        timestamp: new Date().toLocaleTimeString()
       };
-      
       history.unshift(newItem);
-      if(history.length > 15) history.pop();
-      
-      localStorage.setItem('fc_session_history', JSON.stringify(history));
+      if(history.length > 10) history.pop();
+      localStorage.setItem('fc_history', JSON.stringify(history));
       renderHistory();
     }
 
     function renderHistory() {
-      const history = JSON.parse(localStorage.getItem('fc_session_history') || '[]');
-      const $list = document.getElementById('history-list');
-      
+      const history = JSON.parse(localStorage.getItem('fc_history') || '[]');
+      const list = document.getElementById('history-list');
       if(history.length === 0) {
-        $list.innerHTML = `<div class="empty-state" style="height: 150px; opacity: 0.4;">NO RECENT SCANS</div>`;
+        list.innerHTML = `<div style="text-align:center; padding: 20px; font-size: 10px; color: var(--text-muted);">NULL_HISTORY</div>`;
         return;
       }
-
-      $list.innerHTML = history.map(item => {
-        const displayUrl = item.url.replace(/^https?:\/\//, '').split(/[?#]/)[0];
-        
-        return `
-          <div class="history-item" onclick="loadHistoryItem('${item.id}')">
-            <div class="hist-meta">
-              <span>SCAN // SUCCESS</span>
-              <span>${item.timestamp}</span>
-            </div>
-            <div class="hist-url" title="${item.url}">${displayUrl}</div>
-          </div>
-        `;
-      }).join('');
+      list.innerHTML = history.map(item => `
+        <div class="history-item" onclick="loadHistoryItem('${item.id}')">
+          <div class="hist-meta">SIGNAL REC: ${item.timestamp}</div>
+          <div class="hist-url">${item.url}</div>
+        </div>
+      `).join('');
     }
 
     function loadHistoryItem(id) {
-      const history = JSON.parse(localStorage.getItem('fc_session_history') || '[]');
+      const history = JSON.parse(localStorage.getItem('fc_history') || '[]');
       const item = history.find(i => i.id === id);
       if(item) {
         document.getElementById('url-input').value = item.url;
         document.getElementById('output').innerHTML = marked.parse(item.result);
-        
-        if(window.innerWidth <= 1000) {
-          document.getElementById('output').scrollIntoView({behavior: 'smooth'});
-        }
       }
     }
 
     function clearHistory() {
-      if(confirm("Purge all session history?")) {
-        localStorage.removeItem('fc_session_history');
-        renderHistory();
-      }
+      localStorage.removeItem('fc_history');
+      renderHistory();
     }
 
-    // --- Core Execution ---
-    async function analyze(url){
+    // --- Execution Logic ---
+    async function analyze(url) {
+      if(!url) return;
       const $output = document.getElementById('output');
       const $btn = document.getElementById('analyze-btn');
-      if(!url) return;
       
       $btn.disabled = true;
-      
       $output.innerHTML = `
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--primary); padding-top: 20px;">
-          <div style="margin-bottom: 16px; color: #fff;"><span class="loader"></span> ESTABLISHING PROXY TUNNEL...</div>
-          <div style="color: var(--text-muted); margin-bottom: 8px;">> BYPASSING ANTI-BOT PROTOCOLS [OK]</div>
-          <div style="color: var(--text-muted); margin-bottom: 8px;">> EXTRACTING DOM METADATA [IN PROGRESS]</div>
-          <div style="color: var(--text-muted);">> INITIALIZING LLAMA-3.3 REASONING AGENT...</div>
+        <div style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--primary);">
+          [SYSTEM] Initializing Analysis Sequence...<br>
+          > Establishing Proxy Tunnel: OK <br>
+          > Scrape in Progress...
         </div>`;
-      
+
       try {
-        const res = await fetch(api.trigger + '?url=' + encodeURIComponent(url), {method:'POST'});
+        const res = await fetch('/trigger-claw?url=' + encodeURIComponent(url), { method: 'POST' });
         const data = await res.json();
-        
         if (data.error) throw new Error(data.error);
         
-        $output.innerHTML = marked.parse(data.result || "No data returned.");
+        $output.innerHTML = marked.parse(data.result);
         saveToHistory(url, data.result);
-        
-      } catch(err) {
-        $output.innerHTML = `
-          <div style="color: var(--danger); font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(248, 81, 73, 0.3); padding: 20px; border-radius: 8px; background: rgba(248, 81, 73, 0.05);">
-            <strong style="color: var(--danger); font-size: 14px;">[CRITICAL EXCEPTION]</strong><br><br>
-            Message: ${err.message}<br>
-            Action: Verify target URL integrity or retry connection.
-          </div>`;
+      } catch (e) {
+        $output.innerHTML = `<div style="color:var(--danger); font-family:'JetBrains Mono';">[ERROR] ${e.message}</div>`;
       } finally {
         $btn.disabled = false;
       }
     }
 
-    // --- Event Listeners ---
     document.getElementById('analyze-btn').addEventListener('click', () => {
       analyze(document.getElementById('url-input').value.trim());
     });
 
-    document.getElementById('url-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') analyze(e.target.value.trim());
-    });
-
-    // Initialize
     renderHistory();
   </script>
 </body>
