@@ -65,10 +65,28 @@ def extract_urls(text: str) -> list:
 
 def clean_html_for_ai(raw_html: str) -> str:
     soup = BeautifulSoup(raw_html, "html.parser")
-    for element in soup(["script", "style", "nav", "footer", "noscript"]):
+    
+    # 1. Aggressively remove non-essential clutter
+    for element in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg", "iframe"]):
         element.decompose()
-    text = soup.get_text(separator=" ")
-    return re.sub(r'\s+', ' ', text).strip()[:4000]
+
+    # 2. Target specific Amazon content areas to keep the signal high
+    # We focus on the product title, price, and details
+    content = ""
+    target_ids = ["productTitle", "corePrice_feature_div", "feature-bullets", "productDescription"]
+    for tid in target_ids:
+        found = soup.find(id=tid)
+        if found:
+            content += found.get_text(separator=" ") + " "
+
+    # 3. If the specific IDs didn't work, fall back to a smaller text slice
+    if not content.strip():
+        content = soup.get_text(separator=" ")
+
+    # 4. Hard limit the characters to stay under the 6,000 token Groq limit
+    # (Roughly 1 token = 4 characters, so 2000 chars is safe)
+    text = re.sub(r'\s+', ' ', content).strip()
+    return text[:2000]
 
 # --- AI TOOLS ---
 @tool
