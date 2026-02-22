@@ -47,7 +47,11 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 # --- SERVE THE FRONTEND WEB UI ---
 @app.get("/")
 def get_ui():
-    return FileResponse("index.html")
+    # Fix for Render: Ensure it finds index.html in the current directory
+    path = os.path.join(os.path.dirname(__file__), "index.html")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return JSONResponse(status_code=404, content={"error": "index.html not found"})
 
 # --- ENVIRONMENT VARIABLES ---
 COINBASE_COMMERCE_API_KEY = os.getenv("COINBASE_COMMERCE_API_KEY")
@@ -70,8 +74,7 @@ def clean_html_for_ai(raw_html: str) -> str:
     for element in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg", "iframe"]):
         element.decompose()
 
-    # 2. Target specific Amazon content areas to keep the signal high
-    # We focus on the product title, price, and details
+    # 2. Target specific Amazon content areas for high signal
     content = ""
     target_ids = ["productTitle", "corePrice_feature_div", "feature-bullets", "productDescription"]
     for tid in target_ids:
@@ -79,14 +82,12 @@ def clean_html_for_ai(raw_html: str) -> str:
         if found:
             content += found.get_text(separator=" ") + " "
 
-    # 3. If the specific IDs didn't work, fall back to a smaller text slice
+    # 3. Fallback and token safety (Max 1500 chars to stay under 6k token limit)
     if not content.strip():
         content = soup.get_text(separator=" ")
-
-    # 4. Hard limit the characters to stay under the 6,000 token Groq limit
-    # (Roughly 1 token = 4 characters, so 2000 chars is safe)
+    
     text = re.sub(r'\s+', ' ', content).strip()
-    return text[:2000]
+    return text[:1500] 
 
 # --- AI TOOLS ---
 @tool
@@ -140,30 +141,29 @@ tools = [scrape_listing, search_better_deals, calculate_true_net_margin, get_his
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """You are an Enterprise Retail Arbitrage Agent. 
-    You are evaluating a product for resale. 
+    Analyze the product, find cheaper alternatives using your search tool, and provide a DETAILED comparison.
     
-    CRITICAL INSTRUCTION: You MUST use the `search_better_deals` tool to find cheaper alternatives before you provide your final answer. Do not guess or skip this step.
+    CRITICAL INSTRUCTION: You MUST use the `search_better_deals` tool to find alternative prices before you provide your final answer.
     
     PROTOCOLS:
-    1. Extract the product name from the URL provided.
-    2. IMMEDIATELY use the `search_better_deals` tool with that product name.
-    3. Use the `calculate_true_net_margin` tool to find the exact profit margin between the Original Price and the Best Alternative Cost.
-    4. Format your final response EXACTLY matching the structure below.
-    5. Clean all URLs by removing everything after the '?' symbol.
+    1. ALWAYS include the full Product Name for every link provided.
+    2. List the Original Product AND at least 2 cheaper Alternative Products.
+    3. Use the `calculate_true_net_margin` tool to ensure math accuracy.
+    4. Clean all URLs by removing tracking parameters (delete everything after '?').
     
     OUTPUT FORMAT:
     ### Net Financial Breakdown
-    • Original Price: $XX.XX
-    • Best Alternative Cost: $XX.XX
+    • **Original:** [Full Product Name] at $XX.XX
+    • **Best Alt:** [Alternative Name] at $XX.XX
     • **True Net Profit:** $XX.XX
     
     ### Historical Context
-    (Summarize 90-day Keepa data)
+    (Briefly summarize 90-day stability)
     
     ### Source Links
-    • **Original:** $XX.XX - [View Deal](url)
-    • **Alt 1:** $XX.XX - [View Deal](url)
-    • **Alt 2:** $XX.XX - [View Deal](url)
+    • **Original:** $XX.XX - [View Product](url)
+    • **Alt 1:** $XX.XX - [Product Name](url)
+    • **Alt 2:** $XX.XX - [Product Name](url)
     """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
@@ -171,79 +171,7 @@ prompt = ChatPromptTemplate.from_messages([
 
 agent_executor = AgentExecutor(agent=create_tool_calling_agent(llm, tools, prompt), tools=tools, max_iterations=5, handle_parsing_errors=True)
 
-# --- COINBASE COMMERCE LOGIC ---
-def generate_usdc_invoice(chat_id: int, amount_usd: float):
-    url = "https://api.commerce.coinbase.com/charges"
-    payload = {
-        "name": "Fantastic Claw - Pro Tier",
-        "description": "1 Month Unlimited Scans",
-        "pricing_type": "fixed_price",
-        "local_price": {"amount": str(amount_usd), "currency": "USD"},
-        "metadata": {"chat_id": str(chat_id)}
-    }
-    headers = {"X-CC-Api-Key": COINBASE_COMMERCE_API_KEY, "X-CC-Version": "2018-03-22", "Content-Type": "application/json", "Accept": "application/json"}
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        data = response.json()
-        checkout_url = data["data"]["hosted_url"]
-        send_telegram_message(chat_id, f"*Upgrade to Pro*\n\nYour 3 free scans have been exhausted. Pay exactly `${amount_usd} USDC` via Coinbase to unlock unlimited scans.\n\n[Click here to pay securely]({checkout_url})")
-    except Exception as e:
-        print(f"Coinbase API Error: {e}")
-
-@app.post("/coinbase-webhook")
-async def coinbase_webhook(request: Request):
-    payload_body = await request.body()
-    signature = request.headers.get("X-CC-Webhook-Signature", "")
-    try:
-        mac = hmac.new(COINBASE_WEBHOOK_SECRET.encode('utf-8'), payload_body, hashlib.sha256)
-        if not hmac.compare_digest(mac.hexdigest(), signature): return JSONResponse(status_code=400, content={"error": "Invalid signature"})
-        data = await request.json()
-        if data.get("event", {}).get("type") == "charge:confirmed":
-            chat_id_str = data.get("event", {}).get("data", {}).get("metadata", {}).get("chat_id")
-            if chat_id_str:
-                chat_id = int(chat_id_str)
-                pro_users.add(chat_id)
-                send_telegram_message(chat_id, "*Payment Confirmed!*\n\nYou are now a Fantastic Claw PRO user. Your API limits have been removed. Happy hunting!")
-        return {"status": "ok"}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-# --- TELEGRAM LOGIC ---
-def send_telegram_message(chat_id: int, text: str):
-    if not TELEGRAM_BOT_TOKEN: return
-    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown", "disable_web_page_preview": True})
-
-def process_telegram_query(chat_id: int, text: str):
-    if chat_id not in pro_users:
-        scans_used = user_scan_counts.get(chat_id, 0)
-        if scans_used >= 3:
-            generate_usdc_invoice(chat_id, 15.00)
-            return
-        user_scan_counts[chat_id] = scans_used + 1
-
-    urls = extract_urls(text)
-    if not urls:
-        send_telegram_message(chat_id, "*Awaiting Protocol...*\nPlease send a valid product URL.")
-        return
-        
-    url = urls[0]
-    send_telegram_message(chat_id, "*Tunnel Established*\nBypassing anti-bot protocols and calculating True Net FBA Margins...")
-    try:
-        response = agent_executor.invoke({"input": f"Analyze: {url}"})
-        send_telegram_message(chat_id, response["output"][:4000]) 
-    except Exception as e:
-        send_telegram_message(chat_id, f"*CRITICAL EXCEPTION*\n\nThe Claw jammed.\n`{str(e)}`")
-
-@app.post("/telegram-webhook")
-async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
-    data = await request.json()
-    if "message" in data and "text" in data["message"]:
-        chat_id = data["message"]["chat"]["id"]
-        text = data["message"]["text"]
-        background_tasks.add_task(process_telegram_query, chat_id, text)
-    return {"status": "ok"}
-
-# --- WEB TERMINAL ENDPOINT ---
+# --- WEB TERMINAL & EXTENSION ENDPOINTS ---
 @app.post("/trigger-claw")
 async def trigger_agent(url: str):
     try:
@@ -252,14 +180,16 @@ async def trigger_agent(url: str):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"SYSTEM HALT: {str(e)}"})
 
-# --- CHROME EXTENSION ENDPOINT ---
 @app.post("/extension-scan")
 async def extension_scan(url: str):
     try:
-        response = agent_executor.invoke({"input": f"Provide a brief True Net Profit analysis for: {url}"})
+        response = agent_executor.invoke({"input": f"Analyze this specific product and find cheaper alternatives: {url}"})
         return {"result": response["output"]}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Failed: {str(e)}"})
+
+# --- REMAINING ROUTES (TELEGRAM, COINBASE, HEALTH) ---
+# ... (Keep your existing Telegram and Coinbase logic here)
 
 @app.get("/health")
 def health():
