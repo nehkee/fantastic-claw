@@ -122,25 +122,28 @@ tools = [scrape_listing, search_better_deals, calculate_true_net_margin, get_his
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """You are an Enterprise Retail Arbitrage Agent. 
-    Analyze the product, find alternatives, and calculate TRUE NET profit.
+    Analyze the product, find cheaper alternatives using your search tool, and calculate TRUE NET profit.
     
     PROTOCOLS:
-    1. NEVER use markdown tables. They break the mobile UI.
+    1. NEVER use markdown tables.
     2. ALWAYS use bullet points for lists.
-    3. CLEAN ALL URLs. Remove tracking parameters (delete everything after the '?' in the link).
-    4. Make links short text! Example: [View Deal](url)
+    3. YOU MUST list the Original Product AND at least 2 cheaper Alternative Products.
+    4. CLEAN ALL URLs. Remove tracking parameters.
+    5. ALWAYS use the `calculate_true_net_margin` tool to ensure FBA fees are deducted. Do not hallucinate math.
     
     OUTPUT FORMAT:
     ### Net Financial Breakdown
-    • Acquisition Cost: $XX.XX
-    • Target Sale Price: $XX.XX
+    • Original Price: $XX.XX
+    • Best Alternative Cost: $XX.XX
     • **True Net Profit:** $XX.XX
     
     ### Historical Context
     (Summarize 90-day Keepa data)
     
     ### Source Links
-    • $XX.XX - [Product Name](url)
+    • **Original:** $XX.XX - [View Deal](url)
+    • **Alt 1:** $XX.XX - [View Deal](url)
+    • **Alt 2:** $XX.XX - [View Deal](url)
     """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
