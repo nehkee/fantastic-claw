@@ -12,17 +12,15 @@
 
   <style>
     :root {
-      /* Palantir-Inspired Enterprise Palette */
-      --bg-base: #0f1115;        /* Deep Charcoal */
-      --bg-panel: #16191e;       /* Gunmetal Grey */
-      --bg-surface: #1e2228;     /* Slate Layer */
-      --primary: #58a6ff;        /* Steel Blue (Brilliant highlight) */
+      --bg-base: #0f1115;
+      --bg-panel: #16191e;
+      --bg-surface: #1e2228;
+      --primary: #58a6ff;
       --primary-dim: rgba(88, 166, 255, 0.1);
-      --accent: #8b949e;         /* Neutral Grey */
-      --text-main: #f0f6fc;      /* Off-White */
-      --text-muted: #8b949e;     /* Subdued Grey */
-      --border: #30363d;         /* Subtle edge */
-      --border-highlight: #484f58;
+      --accent: #8b949e;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --border: #30363d;
       --success: #3fb950;
       --danger: #f85149;
     }
@@ -34,17 +32,8 @@
       color: var(--text-main);
       font-family: 'Inter', sans-serif;
       line-height: 1.6;
-      overflow-x: hidden;
-      /* Subtle noise/gradient for "depth" */
-      background-image: 
-        radial-gradient(circle at 50% -20%, #1e2228, transparent 50%);
+      background-image: radial-gradient(circle at 50% -20%, #1e2228, transparent 50%);
     }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg-base); }
-    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
     /* --- NAVIGATION --- */
     nav {
@@ -60,21 +49,7 @@
       z-index: 1000;
     }
 
-    .brand {
-      font-weight: 700;
-      font-size: 18px;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text-main);
-    }
-    
-    .brand-icon {
-      filter: grayscale(1) brightness(1.5); /* Makes the crab look like a metallic logo */
-      font-size: 22px;
-    }
-
+    .brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 10px; }
     .nav-links { display: flex; gap: 32px; }
     .nav-links a {
       color: var(--text-muted);
@@ -82,388 +57,207 @@
       font-weight: 500;
       font-size: 12px;
       cursor: pointer;
-      transition: all 0.2s;
       text-transform: uppercase;
       letter-spacing: 1px;
+      transition: 0.2s;
     }
-    .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+    .nav-links a.active { color: var(--primary); }
 
     .status-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 5px 12px;
-      background: #000;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--success);
-      font-family: 'JetBrains Mono', monospace;
+      display: flex; align-items: center; gap: 8px; padding: 5px 12px;
+      background: #000; border: 1px solid var(--border); border-radius: 4px;
+      font-size: 10px; font-weight: 700; color: var(--success); font-family: 'JetBrains Mono';
     }
 
-    /* --- PAGE CONTAINERS --- */
-    .page { display: none; padding: 60px 5%; min-height: 90vh; animation: fadeIn 0.3s ease-out forwards; }
+    /* --- PAGE WRAPPERS --- */
+    .page { display: none; padding: 60px 5%; min-height: 90vh; animation: fadeIn 0.3s ease-out; }
     .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- HERO SECTION --- */
-    .hero { max-width: 900px; margin: 0 auto; text-align: center; padding-top: 40px; }
-    .hero-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      background: var(--primary-dim);
-      border: 1px solid var(--primary);
-      border-radius: 2px;
-      color: var(--primary);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      margin-bottom: 24px;
-      text-transform: uppercase;
-    }
-    .hero h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 24px; color: #ffffff; }
-    .hero p { font-size: 1.15rem; color: var(--text-muted); line-height: 1.7; max-width: 650px; margin: 0 auto 40px; }
+    /* --- SCANNER / TERMINAL STYLES --- */
+    .terminal-container { display: grid; grid-template-columns: 1fr 350px; gap: 24px; max-width: 1400px; margin: 0 auto; }
+    .terminal-main { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .output-screen { background: #0d1117; padding: 30px; height: 550px; overflow-y: auto; border: 1px solid var(--border); font-size: 14px; }
     
-    .btn-glow {
-      background: var(--primary);
-      color: #000;
-      border: none;
-      padding: 14px 32px;
-      border-radius: 4px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: 0.2s;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .btn-glow:hover {
-      background: #82bfff;
-      transform: translateY(-1px);
-    }
+    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-bar input { flex: 1; background: #000; border: 1px solid var(--border); padding: 12px; color: #fff; font-family: 'JetBrains Mono'; outline: none; }
+    .search-bar input:focus { border-color: var(--primary); }
 
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-top: 100px;
-      text-align: left;
-    }
-    .feature-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      padding: 32px;
-      border-radius: 8px;
-      transition: 0.3s;
-    }
-    .feature-card:hover { border-color: var(--primary); background: var(--bg-surface); }
-    .feature-card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
-    .feature-card p { font-size: 0.9rem; color: var(--text-muted); }
-
-    /* --- TERMINAL INTERFACE --- */
-    .terminal-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 24px;
-    }
-
-    .terminal-main, .terminal-history {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .terminal-header {
-      background: #1e2228;
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .mac-dots { display: flex; gap: 6px; }
-    .mac-dots div { width: 10px; height: 10px; border-radius: 50%; opacity: 0.5; }
-    .mac-dots .red { background: var(--danger); }
-    .mac-dots .yellow { background: #e3b341; }
-    .mac-dots .green { background: var(--success); }
-    .terminal-title { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
-
-    .terminal-body { padding: 40px; }
-
-    .search-bar {
-      display: flex;
-      background: #000;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 4px;
-      margin-bottom: 30px;
-    }
-    .search-bar:focus-within { border-color: var(--primary); }
-    .search-bar input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      padding: 12px 16px;
-      color: var(--text-main);
-      font-size: 14px;
-      font-family: 'JetBrains Mono', monospace;
-      outline: none;
-    }
-    .search-bar button {
-      background: var(--bg-surface);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      padding: 0 24px;
-      border-radius: 2px;
-      font-weight: 600;
-      font-size: 12px;
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-    .search-bar button:hover { background: var(--primary); color: #000; }
-
-    .output-screen {
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 32px;
-      min-height: 500px;
-      max-height: 700px;
-      overflow-y: auto;
-    }
-
-    /* History Style */
-    .history-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #1e2228; }
-    .history-header h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-    .history-list { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-    .history-item {
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      padding: 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .history-item:hover { border-color: var(--primary); background: #1c2128; }
-    .hist-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--primary); margin-bottom: 6px; }
-    .hist-url { font-size: 12px; color: var(--text-main); font-family: 'JetBrains Mono'; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Markdown Styling Refined */
-    .output-screen h3 { color: var(--primary); margin: 30px 0 15px; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
-    .output-screen strong { color: #fff; }
-    .output-screen ul { margin-left: 18px; color: var(--text-muted); }
-    .output-screen li { margin-bottom: 8px; }
-
-    /* --- DOCS STYLE --- */
-    .docs-content {
-      background: var(--bg-panel);
-      padding: 60px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .docs-content h1 { font-size: 2.4rem; color: #fff; margin-bottom: 30px; letter-spacing: -0.5px; }
-    .docs-content h2 { font-size: 1.4rem; color: var(--primary); margin-top: 50px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-    .code-box { background: #000; border-left: 3px solid var(--primary); color: #c9d1d9; padding: 20px; border-radius: 4px; font-size: 13px; margin: 25px 0; }
+    /* --- DOCUMENTATION STYLES --- */
+    .docs-container { display: grid; grid-template-columns: 250px 1fr; gap: 40px; max-width: 1200px; margin: 0 auto; }
+    .docs-sidebar { position: sticky; top: 100px; height: fit-content; }
+    .docs-sidebar h4 { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; }
+    .docs-sidebar ul { list-style: none; }
+    .docs-sidebar a { color: var(--text-main); text-decoration: none; font-size: 14px; display: block; margin-bottom: 10px; }
+    .docs-sidebar a:hover { color: var(--primary); }
     
-    .loader {
-      border: 2px solid var(--border);
-      border-top: 2px solid var(--primary);
-      width: 14px; height: 14px;
+    .docs-content { background: var(--bg-panel); padding: 50px; border-radius: 8px; border: 1px solid var(--border); }
+    .docs-content h2 { color: var(--primary); margin: 30px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .code-box { background: #000; border-left: 3px solid var(--primary); padding: 20px; font-family: 'JetBrains Mono'; font-size: 13px; margin: 20px 0; color: #c9d1d9; white-space: pre-wrap; }
+    .docs-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .docs-table th, .docs-table td { padding: 12px; border: 1px solid var(--border); text-align: left; font-size: 13px; }
+    .docs-table th { background: var(--bg-surface); color: var(--primary); text-transform: uppercase; font-size: 11px; }
+
+    /* --- BUTTONS --- */
+    .btn-glow { background: var(--primary); color: #000; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+    .btn-glow:hover { filter: brightness(1.2); }
+    .btn-glow:disabled { background: var(--border); cursor: not-allowed; }
+
+    @media print {
+      nav, .docs-sidebar, .btn-glow, .status-pill { display: none !important; }
+      body { background: white; color: black; }
+      .docs-container { display: block; }
+      .docs-content { background: white; border: none; padding: 0; }
+      .code-box { background: #f0f0f0; color: #000; border: 1px solid #ccc; }
     }
 
-    @media (max-width: 1100px) {
-      .terminal-container { grid-template-columns: 1fr; }
-      .feature-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 1000px) { .terminal-container, .docs-container { grid-template-columns: 1fr; } .docs-sidebar { display: none; } }
   </style>
 </head>
 <body>
 
   <nav>
-    <div class="brand"><span class="brand-icon">🦀</span> <span>FANTASTIC CLAW</span></div>
+    <div class="brand">🦀 FANTASTIC CLAW</div>
     <div class="nav-links">
       <a onclick="showPage('home')" id="nav-home" class="active">Overview</a>
       <a onclick="showPage('scanner')" id="nav-scanner">Terminal</a>
       <a onclick="showPage('docs')" id="nav-docs">Documentation</a>
     </div>
-    <div class="status-pill">
-      <div style="width: 5px; height: 5px; background: var(--success); border-radius: 50%;"></div>
-      SYSTEM_READY
-    </div>
+    <div class="status-pill">SYSTEM_READY</div>
   </nav>
 
   <section id="home" class="page active">
-    <div class="hero">
-      <div class="hero-badge">Autonomous Market Intelligence</div>
-      <h1>Profitability, <br>Quantified.</h1>
-      <p>The industry's first Agentic reasoning engine for retail arbitrage. We combine rotating residential proxy networks with Llama-3.3 intelligence to reveal the "True Net" of every flip.</p>
-      <button class="btn-glow" onclick="showPage('scanner')">Open Command Terminal</button>
-    </div>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <h3>L3 Intelligence</h3>
-        <p>Utilizes advanced LLM reasoning to match identical products across disparate marketplaces, identifying hidden price floors.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Secure Extraction</h3>
-        <p>Automated residential proxy rotation ensures consistent data delivery from high-protection domains like Amazon and Walmart.</p>
-      </div>
-      <div class="feature-card">
-        <h3>FBA Calculation</h3>
-        <p>Built-in logic for referral fees, storage costs, and shipping weights to provide real-time net margin percentages.</p>
-      </div>
+    <div style="max-width: 800px; margin: 0 auto; text-align: center; padding-top: 50px;">
+      <h1 style="font-size: 3.5rem; margin-bottom: 20px;">Profitability, <br>Quantified.</h1>
+      <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px;">The industry's first Agentic reasoning engine for retail arbitrage. We combine rotating residential proxy networks with Llama-3.3 intelligence to reveal the "True Net" of every flip.</p>
+      <button class="btn-glow" onclick="showPage('scanner')">Launch Command Terminal</button>
     </div>
   </section>
 
   <section id="scanner" class="page">
     <div class="terminal-container">
       <div class="terminal-main">
-        <div class="terminal-header">
-          <div class="mac-dots"><div class="red"></div><div class="yellow"></div><div class="green"></div></div>
-          <div class="terminal-title">FC_EXTRACTOR_NODE_01</div>
+        <div style="padding: 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text-muted);">
+          FC_EXTRACTOR_NODE_01 // READY
         </div>
-        <div class="terminal-body">
+        <div style="padding: 30px;">
           <div class="search-bar">
             <input id="url-input" placeholder="INPUT TARGET MARKETPLACE URL..." autocomplete="off" />
-            <button id="analyze-btn">SCAN</button>
+            <button id="analyze-btn" class="btn-glow">SCAN</button>
           </div>
           <div id="output" class="output-screen">
-            <div class="empty-state">
-              <div style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--text-muted);">
-                [SYSTEM] Awaiting input... <br>
-                Please provide a product listing URL to initiate analysis.
-              </div>
-            </div>
+            <div style="color: var(--text-muted); font-family: 'JetBrains Mono';">[SYSTEM] Awaiting input. Please enter a valid product URL.</div>
           </div>
         </div>
       </div>
-
-      <div class="terminal-history">
-        <div class="history-header">
-          <h3>Recent Signals</h3>
-          <button class="clear-history-btn" onclick="clearHistory()">PURGE</button>
-        </div>
-        <div id="history-list" class="history-list"></div>
+      
+      <div class="terminal-history" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="font-size: 12px; text-transform: uppercase; color: var(--primary); margin-bottom: 20px;">Signal History</h4>
+        <div id="history-list"></div>
       </div>
     </div>
   </section>
 
   <section id="docs" class="page">
-    <div class="docs-content">
-      <h1>Intelligence Documentation</h1>
-      <p>Fantastic Claw is a high-performance market research tool designed to provide e-commerce operators with a competitive edge through autonomous data synthesis.</p>
-      
-      <h2>Technical Core</h2>
-      <p>The system leverages the ReAct (Reason + Act) loop, allowing the AI to browse the web, scrape content, and perform mathematical calculations in a single coherent stream.</p>
-      
-      <div class="code-box">
-        // Internal Agent Protocol <br>
-        1. Parse Input URL <br>
-        2. Execute Residential Proxy Scrape <br>
-        3. Identify ASIN/GTIN <br>
-        4. Cross-Reference Competitor Floor <br>
-        5. Calculate FBA True Net
-      </div>
-      
-      <h2>Latency Optimization</h2>
-      <p>By utilizing Groq's LPU (Language Processing Unit), we achieve sub-second reasoning speeds, transforming what used to be a 60-second manual research task into a 5-second automated Intel Report.</p>
+    <div class="docs-container">
+      <aside class="docs-sidebar">
+        <h4>Core Systems</h4>
+        <ul>
+          <li><a href="#arch">Architecture Stack</a></li>
+          <li><a href="#react">ReAct Protocol</a></li>
+        </ul>
+        <h4>Extraction</h4>
+        <ul>
+          <li><a href="#tools">Autonomous Tools</a></li>
+          <li><a href="#scraping">Anti-Bot Strategy</a></li>
+        </ul>
+      </aside>
+
+      <main class="docs-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h1 id="arch">Technical Spec</h1>
+          <button onclick="window.print()" class="btn-glow" style="padding: 8px 16px; font-size: 10px;">Export PDF</button>
+        </div>
+        <p><strong>Version:</strong> 2.0.0 (Agentic Web2) | <strong>Codename:</strong> Palantir-Grey</p>
+
+        <h2>1. System Architecture</h2>
+        <p>Fantastic Claw utilizes an <strong>Asynchronous Agentic Framework</strong>. The system doesn't just scrape; it thinks. By leveraging the ReAct (Reason + Act) loop, the AI can handle UI changes in marketplaces without requiring code updates.</p>
+        <div class="code-box">
+• Intelligence: Llama-3.3-70B (Groq LPU)
+• Backend: FastAPI / Python 3.10+
+• Infrastructure: ScraperAPI Residential Proxies
+        </div>
+
+        <h2 id="react">2. ReAct Protocol</h2>
+        <p>The "Claw" uses a three-step cognitive cycle for every URL processed:</p>
+        <ul>
+          <li><strong>Thought:</strong> Extracting product identifiers (ASIN/UPC) from the DOM.</li>
+          <li><strong>Action:</strong> Querying secondary markets for price-floor validation.</li>
+          <li><strong>Observation:</strong> Compiling a Net-Profit report including FBA fees.</li>
+        </ul>
+
+        <h2 id="tools">3. Autonomous Toolbelt</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Tool</th><th>Capability</th><th>Source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>scrape_listing</td><td>Surgical HTML extraction</td><td>Residential Proxy</td></tr>
+            <tr><td>calculate_roi</td><td>FBA/Referral fee math</td><td>Deterministic Logic</td></tr>
+            <tr><td>search_deal</td><td>Market cross-referencing</td><td>Google/Walmart API</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="scraping">4. Anti-Bot Strategy</h2>
+        <p>To bypass sophisticated firewalls like Akamai and PerimeterX, the system filters all outgoing requests through a <strong>Residential Proxy Tunnel</strong> with JS Rendering enabled only when a CAPTCHA is detected.</p>
+      </main>
     </div>
   </section>
 
   <script>
-    // --- Navigation Logic ---
+    // Navigation
     function showPage(pageId) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
       document.getElementById('nav-' + pageId).classList.add('active');
+      window.scrollTo(0,0);
     }
 
-    // --- Markdown Configuration ---
-    marked.setOptions({ gfm: true, breaks: true });
+    // Logic for the Scanner
+    const $input = document.getElementById('url-input');
+    const $btn = document.getElementById('analyze-btn');
+    const $output = document.getElementById('output');
 
-    // --- History Logic ---
-    function saveToHistory(url, result) {
-      const history = JSON.parse(localStorage.getItem('fc_history') || '[]');
-      const newItem = {
-        id: Date.now().toString(),
-        url: url,
-        result: result,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      history.unshift(newItem);
-      if(history.length > 10) history.pop();
-      localStorage.setItem('fc_history', JSON.stringify(history));
-      renderHistory();
-    }
-
-    function renderHistory() {
-      const history = JSON.parse(localStorage.getItem('fc_history') || '[]');
-      const list = document.getElementById('history-list');
-      if(history.length === 0) {
-        list.innerHTML = `<div style="text-align:center; padding: 20px; font-size: 10px; color: var(--text-muted);">NULL_HISTORY</div>`;
-        return;
-      }
-      list.innerHTML = history.map(item => `
-        <div class="history-item" onclick="loadHistoryItem('${item.id}')">
-          <div class="hist-meta">SIGNAL REC: ${item.timestamp}</div>
-          <div class="hist-url">${item.url}</div>
-        </div>
-      `).join('');
-    }
-
-    function loadHistoryItem(id) {
-      const history = JSON.parse(localStorage.getItem('fc_history') || '[]');
-      const item = history.find(i => i.id === id);
-      if(item) {
-        document.getElementById('url-input').value = item.url;
-        document.getElementById('output').innerHTML = marked.parse(item.result);
-      }
-    }
-
-    function clearHistory() {
-      localStorage.removeItem('fc_history');
-      renderHistory();
-    }
-
-    // --- Execution Logic ---
-    async function analyze(url) {
+    async function startScan() {
+      const url = $input.value.trim();
       if(!url) return;
-      const $output = document.getElementById('output');
-      const $btn = document.getElementById('analyze-btn');
-      
+
       $btn.disabled = true;
-      $output.innerHTML = `
-        <div style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--primary);">
-          [SYSTEM] Initializing Analysis Sequence...<br>
-          > Establishing Proxy Tunnel: OK <br>
-          > Scrape in Progress...
-        </div>`;
+      $output.innerHTML = `<div style="color: var(--primary); font-family: 'JetBrains Mono';">[SYSTEM] Initializing scan...<br>> Rotating Proxies...<br>> Ingesting DOM...</div>`;
 
       try {
-        const res = await fetch('/trigger-claw?url=' + encodeURIComponent(url), { method: 'POST' });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        
-        $output.innerHTML = marked.parse(data.result);
-        saveToHistory(url, data.result);
-      } catch (e) {
-        $output.innerHTML = `<div style="color:var(--danger); font-family:'JetBrains Mono';">[ERROR] ${e.message}</div>`;
+        const response = await fetch('/trigger-claw?url=' + encodeURIComponent(url), { method: 'POST' });
+        const data = await response.json();
+        $output.innerHTML = marked.parse(data.result || "Scan completed with no results.");
+        saveHistory(url);
+      } catch (err) {
+        $output.innerHTML = `<div style="color: var(--danger);">[ERROR] ${err.message}</div>`;
       } finally {
         $btn.disabled = false;
       }
     }
 
-    document.getElementById('analyze-btn').addEventListener('click', () => {
-      analyze(document.getElementById('url-input').value.trim());
-    });
+    function saveHistory(url) {
+      const list = document.getElementById('history-list');
+      const div = document.createElement('div');
+      div.style = "padding: 10px; border-bottom: 1px solid var(--border); font-size: 11px; cursor: pointer;";
+      div.innerText = "> " + url.substring(0, 30) + "...";
+      div.onclick = () => { $input.value = url; startScan(); };
+      list.prepend(div);
+    }
 
-    renderHistory();
+    $btn.addEventListener('click', startScan);
   </script>
 </body>
 </html>
