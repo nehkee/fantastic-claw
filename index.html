@@ -1,263 +1,259 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fantastic Claw | AI-Powered Retail Arbitrage</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Claw Protocol</title>
 
-  <style>
-    :root {
-      --bg-base: #0f1115;
-      --bg-panel: #16191e;
-      --bg-surface: #1e2228;
-      --primary: #58a6ff;
-      --primary-dim: rgba(88, 166, 255, 0.1);
-      --accent: #8b949e;
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
-      --border: #30363d;
-      --success: #3fb950;
-      --danger: #f85149;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      background-color: var(--bg-base);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      line-height: 1.6;
-      background-image: radial-gradient(circle at 50% -20%, #1e2228, transparent 50%);
-    }
+<style>
+:root {
+  --bg: #0b0c10;
+  --panel: #111217;
+  --panel-2: #16181d;
+  --border: rgba(255,255,255,0.08);
+  --text: #e8e8ea;
+  --muted: #8b8f98;
+  --gold: #c9a227;
+  --gold-soft: #f4d35e;
+  --radius: 20px;
+}
 
-    /* --- NAVIGATION --- */
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 5%;
-      background: rgba(15, 17, 21, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 10px; }
-    .nav-links { display: flex; gap: 32px; }
-    .nav-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 12px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: 0.2s;
-    }
-    .nav-links a.active { color: var(--primary); }
+body {
+  background: radial-gradient(circle at 10% 10%, rgba(201,162,39,0.05), transparent 40%),
+              radial-gradient(circle at 90% 90%, rgba(244,211,94,0.05), transparent 40%),
+              var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+}
 
-    .status-pill {
-      display: flex; align-items: center; gap: 8px; padding: 5px 12px;
-      background: #000; border: 1px solid var(--border); border-radius: 4px;
-      font-size: 10px; font-weight: 700; color: var(--success); font-family: 'JetBrains Mono';
-    }
+/* NAV */
 
-    /* --- PAGE WRAPPERS --- */
-    .page { display: none; padding: 60px 5%; min-height: 90vh; animation: fadeIn 0.3s ease-out; }
-    .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 26px 8%;
+  border-bottom: 1px solid var(--border);
+  background: rgba(11,12,16,0.9);
+  backdrop-filter: blur(20px);
+}
 
-    /* --- SCANNER / TERMINAL STYLES --- */
-    .terminal-container { display: grid; grid-template-columns: 1fr 350px; gap: 24px; max-width: 1400px; margin: 0 auto; }
-    .terminal-main { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .output-screen { background: #0d1117; padding: 30px; height: 550px; overflow-y: auto; border: 1px solid var(--border); font-size: 14px; }
-    
-    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-    .search-bar input { flex: 1; background: #000; border: 1px solid var(--border); padding: 12px; color: #fff; font-family: 'JetBrains Mono'; outline: none; }
-    .search-bar input:focus { border-color: var(--primary); }
+.brand {
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -1px;
+  background: linear-gradient(90deg,#fff,var(--gold-soft));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-    /* --- DOCUMENTATION STYLES --- */
-    .docs-container { display: grid; grid-template-columns: 250px 1fr; gap: 40px; max-width: 1200px; margin: 0 auto; }
-    .docs-sidebar { position: sticky; top: 100px; height: fit-content; }
-    .docs-sidebar h4 { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; }
-    .docs-sidebar ul { list-style: none; }
-    .docs-sidebar a { color: var(--text-main); text-decoration: none; font-size: 14px; display: block; margin-bottom: 10px; }
-    .docs-sidebar a:hover { color: var(--primary); }
-    
-    .docs-content { background: var(--bg-panel); padding: 50px; border-radius: 8px; border: 1px solid var(--border); }
-    .docs-content h2 { color: var(--primary); margin: 30px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .code-box { background: #000; border-left: 3px solid var(--primary); padding: 20px; font-family: 'JetBrains Mono'; font-size: 13px; margin: 20px 0; color: #c9d1d9; white-space: pre-wrap; }
-    .docs-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    .docs-table th, .docs-table td { padding: 12px; border: 1px solid var(--border); text-align: left; font-size: 13px; }
-    .docs-table th { background: var(--bg-surface); color: var(--primary); text-transform: uppercase; font-size: 11px; }
+.nav-links {
+  display: flex;
+  gap: 36px;
+}
 
-    /* --- BUTTONS --- */
-    .btn-glow { background: var(--primary); color: #000; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; }
-    .btn-glow:hover { filter: brightness(1.2); }
-    .btn-glow:disabled { background: var(--border); cursor: not-allowed; }
+.nav-links a {
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 14px;
+  transition: 0.3s;
+}
 
-    @media print {
-      nav, .docs-sidebar, .btn-glow, .status-pill { display: none !important; }
-      body { background: white; color: black; }
-      .docs-container { display: block; }
-      .docs-content { background: white; border: none; padding: 0; }
-      .code-box { background: #f0f0f0; color: #000; border: 1px solid #ccc; }
-    }
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--gold-soft);
+}
 
-    @media (max-width: 1000px) { .terminal-container, .docs-container { grid-template-columns: 1fr; } .docs-sidebar { display: none; } }
-  </style>
+/* TERMINAL PAGE */
+
+.terminal-wrapper {
+  max-width: 1300px;
+  margin: 80px auto;
+  padding: 0 5%;
+}
+
+.terminal-frame {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+}
+
+/* TOP BAR */
+
+.terminal-header {
+  background: var(--panel-2);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.terminal-title {
+  font-family: 'IBM Plex Mono';
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--gold-soft);
+}
+
+.status {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* INPUT ZONE */
+
+.terminal-input-zone {
+  padding: 30px;
+  border-bottom: 1px solid var(--border);
+}
+
+.input-shell {
+  display: flex;
+  align-items: center;
+  background: #0e0f14;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 18px;
+  transition: 0.3s;
+}
+
+.input-shell:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.prompt {
+  font-family: 'IBM Plex Mono';
+  color: var(--gold-soft);
+  margin-right: 12px;
+}
+
+input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-family: 'IBM Plex Mono';
+  font-size: 14px;
+}
+
+/* EXECUTE BUTTON */
+
+.execute-btn {
+  margin-top: 20px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg,var(--gold),var(--gold-soft));
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.execute-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(201,162,39,0.3);
+}
+
+/* OUTPUT */
+
+.terminal-output {
+  padding: 40px;
+  min-height: 400px;
+  background: #0e0f14;
+  font-family: 'IBM Plex Mono';
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.metric {
+  background: var(--panel-2);
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  transition: 0.3s;
+}
+
+.metric:hover {
+  border-color: var(--gold);
+}
+
+.metric h4 {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.metric p {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-soft);
+}
+</style>
 </head>
+
 <body>
 
-  <nav>
-    <div class="brand">🦀 FANTASTIC CLAW</div>
-    <div class="nav-links">
-      <a onclick="showPage('home')" id="nav-home" class="active">Overview</a>
-      <a onclick="showPage('scanner')" id="nav-scanner">Terminal</a>
-      <a onclick="showPage('docs')" id="nav-docs">Documentation</a>
-    </div>
-    <div class="status-pill">SYSTEM_READY</div>
-  </nav>
+<nav>
+  <div class="brand">THE CLAW PROTOCOL</div>
+  <div class="nav-links">
+    <a class="active">Terminal</a>
+    <a>Docs</a>
+  </div>
+</nav>
 
-  <section id="home" class="page active">
-    <div style="max-width: 800px; margin: 0 auto; text-align: center; padding-top: 50px;">
-      <h1 style="font-size: 3.5rem; margin-bottom: 20px;">Profitability, <br>Quantified.</h1>
-      <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px;">The industry's first Agentic reasoning engine for retail arbitrage. We combine rotating residential proxy networks with Llama-3.3 intelligence to reveal the "True Net" of every flip.</p>
-      <button class="btn-glow" onclick="showPage('scanner')">Launch Command Terminal</button>
-    </div>
-  </section>
+<div class="terminal-wrapper">
+  <div class="terminal-frame">
 
-  <section id="scanner" class="page">
-    <div class="terminal-container">
-      <div class="terminal-main">
-        <div style="padding: 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text-muted);">
-          FC_EXTRACTOR_NODE_01 // READY
+    <div class="terminal-header">
+      <div class="terminal-title">CLAWSCAN v1.0</div>
+      <div class="status">SYSTEM READY</div>
+    </div>
+
+    <div class="terminal-input-zone">
+      <div class="input-shell">
+        <div class="prompt">claw://</div>
+        <input placeholder="Paste marketplace URL for analysis..." />
+      </div>
+      <button class="execute-btn">EXECUTE ANALYSIS</button>
+    </div>
+
+    <div class="terminal-output">
+      Awaiting ingestion...
+
+      <div class="metric-grid">
+        <div class="metric">
+          <h4>TRUE MARKET VALUE</h4>
+          <p>$142.30</p>
         </div>
-        <div style="padding: 30px;">
-          <div class="search-bar">
-            <input id="url-input" placeholder="INPUT TARGET MARKETPLACE URL..." autocomplete="off" />
-            <button id="analyze-btn" class="btn-glow">SCAN</button>
-          </div>
-          <div id="output" class="output-screen">
-            <div style="color: var(--text-muted); font-family: 'JetBrains Mono';">[SYSTEM] Awaiting input. Please enter a valid product URL.</div>
-          </div>
+        <div class="metric">
+          <h4>ESTIMATED NET PROFIT</h4>
+          <p>$27.18</p>
+        </div>
+        <div class="metric">
+          <h4>ARBITRAGE CONFIDENCE</h4>
+          <p>87%</p>
         </div>
       </div>
-      
-      <div class="terminal-history" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
-        <h4 style="font-size: 12px; text-transform: uppercase; color: var(--primary); margin-bottom: 20px;">Signal History</h4>
-        <div id="history-list"></div>
-      </div>
     </div>
-  </section>
 
-  <section id="docs" class="page">
-    <div class="docs-container">
-      <aside class="docs-sidebar">
-        <h4>Core Systems</h4>
-        <ul>
-          <li><a href="#arch">Architecture Stack</a></li>
-          <li><a href="#react">ReAct Protocol</a></li>
-        </ul>
-        <h4>Extraction</h4>
-        <ul>
-          <li><a href="#tools">Autonomous Tools</a></li>
-          <li><a href="#scraping">Anti-Bot Strategy</a></li>
-        </ul>
-      </aside>
+  </div>
+</div>
 
-      <main class="docs-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h1 id="arch">Technical Spec</h1>
-          <button onclick="window.print()" class="btn-glow" style="padding: 8px 16px; font-size: 10px;">Export PDF</button>
-        </div>
-        <p><strong>Version:</strong> 2.0.0 (Agentic Web2) | <strong>Codename:</strong> Palantir-Grey</p>
-
-        <h2>1. System Architecture</h2>
-        <p>Fantastic Claw utilizes an <strong>Asynchronous Agentic Framework</strong>. The system doesn't just scrape; it thinks. By leveraging the ReAct (Reason + Act) loop, the AI can handle UI changes in marketplaces without requiring code updates.</p>
-        <div class="code-box">
-• Intelligence: Llama-3.3-70B (Groq LPU)
-• Backend: FastAPI / Python 3.10+
-• Infrastructure: ScraperAPI Residential Proxies
-        </div>
-
-        <h2 id="react">2. ReAct Protocol</h2>
-        <p>The "Claw" uses a three-step cognitive cycle for every URL processed:</p>
-        <ul>
-          <li><strong>Thought:</strong> Extracting product identifiers (ASIN/UPC) from the DOM.</li>
-          <li><strong>Action:</strong> Querying secondary markets for price-floor validation.</li>
-          <li><strong>Observation:</strong> Compiling a Net-Profit report including FBA fees.</li>
-        </ul>
-
-        <h2 id="tools">3. Autonomous Toolbelt</h2>
-        <table class="docs-table">
-          <thead>
-            <tr><th>Tool</th><th>Capability</th><th>Source</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>scrape_listing</td><td>Surgical HTML extraction</td><td>Residential Proxy</td></tr>
-            <tr><td>calculate_roi</td><td>FBA/Referral fee math</td><td>Deterministic Logic</td></tr>
-            <tr><td>search_deal</td><td>Market cross-referencing</td><td>Google/Walmart API</td></tr>
-          </tbody>
-        </table>
-
-        <h2 id="scraping">4. Anti-Bot Strategy</h2>
-        <p>To bypass sophisticated firewalls like Akamai and PerimeterX, the system filters all outgoing requests through a <strong>Residential Proxy Tunnel</strong> with JS Rendering enabled only when a CAPTCHA is detected.</p>
-      </main>
-    </div>
-  </section>
-
-  <script>
-    // Navigation
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-      document.getElementById(pageId).classList.add('active');
-      document.getElementById('nav-' + pageId).classList.add('active');
-      window.scrollTo(0,0);
-    }
-
-    // Logic for the Scanner
-    const $input = document.getElementById('url-input');
-    const $btn = document.getElementById('analyze-btn');
-    const $output = document.getElementById('output');
-
-    async function startScan() {
-      const url = $input.value.trim();
-      if(!url) return;
-
-      $btn.disabled = true;
-      $output.innerHTML = `<div style="color: var(--primary); font-family: 'JetBrains Mono';">[SYSTEM] Initializing scan...<br>> Rotating Proxies...<br>> Ingesting DOM...</div>`;
-
-      try {
-        const response = await fetch('/trigger-claw?url=' + encodeURIComponent(url), { method: 'POST' });
-        const data = await response.json();
-        $output.innerHTML = marked.parse(data.result || "Scan completed with no results.");
-        saveHistory(url);
-      } catch (err) {
-        $output.innerHTML = `<div style="color: var(--danger);">[ERROR] ${err.message}</div>`;
-      } finally {
-        $btn.disabled = false;
-      }
-    }
-
-    function saveHistory(url) {
-      const list = document.getElementById('history-list');
-      const div = document.createElement('div');
-      div.style = "padding: 10px; border-bottom: 1px solid var(--border); font-size: 11px; cursor: pointer;";
-      div.innerText = "> " + url.substring(0, 30) + "...";
-      div.onclick = () => { $input.value = url; startScan(); };
-      list.prepend(div);
-    }
-
-    $btn.addEventListener('click', startScan);
-  </script>
 </body>
 </html>
