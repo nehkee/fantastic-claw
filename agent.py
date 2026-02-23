@@ -1,18 +1,14 @@
 import os
 import re
-import csv
-import io
 import requests
-import hmac
-import hashlib
 import traceback
+from typing import Optional
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from typing import Optional
 from pydantic import BaseModel, Field
 from functools import lru_cache
 from bs4 import BeautifulSoup
@@ -34,163 +30,160 @@ def run_sniper_monitors():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    scheduler.add_job(run_sniper_monitors, 'interval', minutes=15)
-    scheduler.start()
+    if not scheduler.running:
+        scheduler.add_job(run_sniper_monitors, 'interval', minutes=15)
+        scheduler.start()
     yield
     scheduler.shutdown()
 
 # --- APP INITIALIZATION ---
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Serve static files (index.html)
 app.mount("/static", StaticFiles(directory="."), name="static")
 
-# --- SERVE THE FRONTEND WEB UI ---
 @app.get("/")
 def get_ui():
-    # Fix for Render: Ensure it finds index.html in the current directory
     path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(path):
         return FileResponse(path)
     return JSONResponse(status_code=404, content={"error": "index.html not found"})
 
-# --- ENVIRONMENT VARIABLES ---
-COINBASE_COMMERCE_API_KEY = os.getenv("COINBASE_COMMERCE_API_KEY")
-COINBASE_WEBHOOK_SECRET = os.getenv("COINBASE_WEBHOOK_SECRET")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-# --- MOCK DATABASE ---
-user_scan_counts = {}
-pro_users = set()
-
-# --- UTILITY ---
-def extract_urls(text: str) -> list:
-    url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    return re.findall(url_pattern, text)
-
+# --- UTILITY: HTML CLEANER ---
 def clean_html_for_ai(raw_html: str) -> str:
+    """Strips noise and isolates product data to save tokens."""
     soup = BeautifulSoup(raw_html, "html.parser")
-    
-    # 1. Aggressively remove non-essential clutter
     for element in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg", "iframe"]):
         element.decompose()
 
-    # 2. Target specific Amazon content areas for high signal
+    # Target high-signal IDs for marketplaces
     content = ""
-    target_ids = ["productTitle", "corePrice_feature_div", "feature-bullets", "productDescription"]
+    target_ids = ["productTitle", "corePrice_feature_div", "feature-bullets", "productDescription", "centerCol"]
     for tid in target_ids:
         found = soup.find(id=tid)
         if found:
             content += found.get_text(separator=" ") + " "
 
-    # 3. Fallback and token safety (Max 1500 chars to stay under 6k token limit)
     if not content.strip():
         content = soup.get_text(separator=" ")
     
     text = re.sub(r'\s+', ' ', content).strip()
-    return text[:1500] 
+    return text[:2000] # Increased context slightly for better reasoning
 
 # --- AI TOOLS ---
+
 @tool
 @lru_cache(maxsize=100)
 def scrape_listing(url: str) -> str:
-    """Scrapes product details and pricing from a URL."""
+    """Scrapes product details, specs, and current pricing from a URL."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
-    if not scraper_key: return "Error: Missing API Key"
-    payload = {'api_key': scraper_key, 'url': url, 'premium': 'true', 'autoparse': 'true'}
+    if not scraper_key: return "Error: Missing SCRAPER_API_KEY"
+    
+    # Using premium=true and country_code=us for high-fidelity retail data
+    payload = {'api_key': scraper_key, 'url': url, 'premium': 'true', 'country_code': 'us'}
     try:
-        response = requests.get('http://api.scraperapi.com', params=payload, timeout=25)
-        if response.status_code == 403: return "Error: ScraperAPI credits exhausted."
-        return clean_html_for_ai(response.text) if response.status_code == 200 else "Scrape failed."
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=30)
+        if response.status_code == 200:
+            return clean_html_for_ai(response.text)
+        return f"Scrape failed with status: {response.status_code}"
     except Exception as e:
-        return str(e)
-
-class SearchDealsInput(BaseModel):
-    query: str = Field(description="The product name/category to search.")
-
-@tool(args_schema=SearchDealsInput)
-@lru_cache(maxsize=100)
-def search_better_deals(query: str) -> str:
-    """Searches for alternatives. Returns product names, prices, and ASIN IDs."""
-    scraper_key = os.getenv("SCRAPER_API_KEY")
-    search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
-    payload = {'api_key': scraper_key, 'url': search_url, 'premium': 'false', 'autoparse': 'true'}
-    try:
-        response = requests.get('http://api.scraperapi.com', params=payload, timeout=25)
-        if response.status_code == 403: return "Error: ScraperAPI credits exhausted."
-        return clean_html_for_ai(response.text) if response.status_code == 200 else "Search failed."
-    except Exception as e:
-        return str(e)
+        return f"Scraper error: {str(e)}"
 
 @tool
-def calculate_true_net_margin(sale_price: float, cost_of_goods: float, weight_lbs: float = 1.0) -> str:
-    """Calculates True Net FBA Margin deducting the 15% referral fee and estimated FBA fees."""
-    referral_fee = sale_price * 0.15
-    fba_fee = 3.22 + (weight_lbs * 0.50)
+def calculate_true_net_margin(sale_price: float, cost_of_goods: float, category: str = "general") -> str:
+    """
+    Calculates precise Net Profit and ROI using category-specific referral fees.
+    Categories: 'electronics' (8%), 'apparel' (17%), 'general' (15%).
+    """
+    cat = category.lower()
+    if any(x in cat for x in ["elect", "tech", "pc", "phone"]):
+        ref_rate = 0.08
+    elif any(x in cat for x in ["apparel", "cloth", "shoe"]):
+        ref_rate = 0.17
+    else:
+        ref_rate = 0.15
+
+    referral_fee = sale_price * ref_rate
+    fba_fee = 5.15 # Average standard size FBA fulfillment cost
+    
     net_profit = sale_price - cost_of_goods - referral_fee - fba_fee
-    margin = (net_profit / sale_price) * 100 if sale_price > 0 else 0
-    return f"Net FBA Profit: ${net_profit:.2f} | True Margin: {margin:.2f}% (FBA Fee: ${fba_fee:.2f}, Referral: ${referral_fee:.2f})"
+    roi = (net_profit / cost_of_goods) * 100 if cost_of_goods > 0 else 0
+    
+    return (f"Financial Audit ({cat.upper()}): "
+            f"Net Profit: ${net_profit:.2f} | ROI: {roi:.2f}% | "
+            f"Fees: ${referral_fee:.2f} (Ref) + ${fba_fee:.2f} (FBA)")
 
 @tool
-def get_historical_price(asin: str) -> str:
-    """Mock Keepa Integration: Checks 90-day price history for an ASIN."""
-    return f"Historical Data for {asin}: The 90-day average is steady. No immediate price crash detected."
+def retrieve_comparative_deals(product_name: str) -> str:
+    """Searches the web for the current 'Market Floor' price of a specific product name."""
+    scraper_key = os.getenv("SCRAPER_API_KEY")
+    search_url = f"https://www.google.com/search?q={product_name.replace(' ', '+')}+price+comparison"
+    payload = {'api_key': scraper_key, 'url': search_url, 'premium': 'true'}
+    try:
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=25)
+        return clean_html_for_ai(response.text)
+    except Exception as e:
+        return f"Market search failed: {str(e)}"
 
 # --- AGENT SETUP ---
-llm = ChatGroq(api_key=os.getenv("GROQ_API_KEY"), model="llama-3.1-8b-instant", temperature=0.1, request_timeout=60.0)
-tools = [scrape_listing, search_better_deals, calculate_true_net_margin, get_historical_price]
+llm = ChatGroq(
+    api_key=os.getenv("GROQ_API_KEY"), 
+    model="llama-3.3-70b-versatile", # Upgraded to flagship model for investment-grade logic
+    temperature=0.1
+)
+
+tools = [scrape_listing, calculate_true_net_margin, retrieve_comparative_deals]
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are an Enterprise Retail Arbitrage Agent. 
-    Analyze the product, find cheaper alternatives using your search tool, and provide a DETAILED comparison.
+    ("system", """You are the 'Claw Protocol' Enterprise Agent. 
+    Your mission is to validate retail arbitrage opportunities with clinical precision.
     
-    CRITICAL INSTRUCTION: You MUST use the `search_better_deals` tool to find alternative prices before you provide your final answer.
+    CORE PROTOCOL:
+    1. SCRAPE the user's URL to find the current item and price.
+    2. CATEGORIZE the item (Electronics, Apparel, or General) to apply correct fees.
+    3. COMPARE: Use `retrieve_comparative_deals` to find the absolute market floor.
+    4. CALCULATE: Use `calculate_true_net_margin` using the target market price as 'sale_price' and the input URL price as 'cost_of_goods'.
     
-    PROTOCOLS:
-    1. ALWAYS include the full Product Name for every link provided.
-    2. List the Original Product AND at least 2 cheaper Alternative Products.
-    3. Use the `calculate_true_net_margin` tool to ensure math accuracy.
-    4. Clean all URLs by removing tracking parameters (delete everything after '?').
-    
-    OUTPUT FORMAT:
-    ### Net Financial Breakdown
-    • **Original:** [Full Product Name] at $XX.XX
-    • **Best Alt:** [Alternative Name] at $XX.XX
-    • **True Net Profit:** $XX.XX
-    
-    ### Historical Context
-    (Briefly summarize 90-day stability)
-    
-    ### Source Links
-    • **Original:** $XX.XX - [View Product](url)
-    • **Alt 1:** $XX.XX - [Product Name](url)
-    • **Alt 2:** $XX.XX - [Product Name](url)
+    FORMATTING:
+    - Use Markdown headers and bold text for clarity.
+    - Provide a 'Final Recommendation': [STRONG BUY], [WATCH], or [PASS].
+    - ROI > 20% is a [STRONG BUY].
     """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
 ])
 
-agent_executor = AgentExecutor(agent=create_tool_calling_agent(llm, tools, prompt), tools=tools, max_iterations=5, handle_parsing_errors=True)
+agent_executor = AgentExecutor(
+    agent=create_tool_calling_agent(llm, tools, prompt), 
+    tools=tools, 
+    verbose=True,
+    handle_parsing_errors=True
+)
 
-# --- WEB TERMINAL & EXTENSION ENDPOINTS ---
+# --- ENDPOINTS ---
+
 @app.post("/trigger-claw")
 async def trigger_agent(url: str):
     try:
-        response = agent_executor.invoke({"input": f"Perform a professional flip analysis on: {url}"})
+        # We prompt the agent to perform the full 4-step protocol
+        input_msg = f"Execute a full arbitrage audit on this listing: {url}"
+        response = agent_executor.invoke({"input": input_msg})
         return {"result": response["output"]}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": f"SYSTEM HALT: {str(e)}"})
-
-@app.post("/extension-scan")
-async def extension_scan(url: str):
-    try:
-        response = agent_executor.invoke({"input": f"Analyze this specific product and find cheaper alternatives: {url}"})
-        return {"result": response["output"]}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": f"Failed: {str(e)}"})
-
-# --- REMAINING ROUTES (TELEGRAM, COINBASE, HEALTH) ---
-# ... (Keep your existing Telegram and Coinbase logic here)
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"error": f"Internal Protocol Error: {str(e)}"})
 
 @app.get("/health")
 def health():
-    return {"status": "Online"}
+    return {"status": "Operational", "engine": "Llama-3.3-70B"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
