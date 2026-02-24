@@ -9,7 +9,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from pydantic import BaseModel, Field
 from functools import lru_cache
 from bs4 import BeautifulSoup
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -45,39 +44,29 @@ def get_ui():
     path = os.path.join(os.path.dirname(__file__), "index.html")
     return FileResponse(path) if os.path.exists(path) else JSONResponse(status_code=404, content={"error": "index.html not found"})
 
-# --- UTILITY: INTELLIGENT HTML CLEANER ---
+# --- UTILITY: HTML CLEANER ---
 def clean_html_for_ai(raw_html: str) -> str:
     soup = BeautifulSoup(raw_html, "html.parser")
-    # Remove heavy elements
     for element in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg", "iframe"]):
         element.decompose()
     
-    # Priority content zones for prices and product links
     content = ""
-    target_selectors = [
-        "productTitle", "corePrice_feature_div", # Amazon
-        "rso", "search", "g",                    # Google Search
-        "price-characteristic", "item-price"     # Generic Retail
-    ]
-    
-    for selector in target_selectors:
-        found = soup.find(id=selector) or soup.find(class_=selector)
+    target_ids = ["productTitle", "corePrice_feature_div", "search", "rso", "centerCol", "productDescription"]
+    for tid in target_ids:
+        found = soup.find(id=tid) or soup.find(class_=tid)
         if found:
             content += found.get_text(separator=" | ") + "\n"
 
-    # If specific targets fail, fallback to a semi-filtered body
-    if len(content.strip()) < 100:
+    if not content.strip():
         content = soup.get_text(separator=" | ")
     
-    # Expand context window to ensure competitor links aren't truncated
-    text = re.sub(r'\s+', ' ', content).strip()
-    return text[:4500] 
+    return re.sub(r'\s+', ' ', content).strip()[:4000]
 
 # --- AI TOOLS ---
 
 @tool
 def scrape_listing(url: str) -> str:
-    """Scrapes the main product page to extract the original price and product name."""
+    """Scrapes product details, descriptions, ratings, and pricing from a specific URL."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
     payload = {'api_key': scraper_key, 'url': url, 'premium': 'true', 'country_code': 'us'}
     try:
@@ -87,11 +76,18 @@ def scrape_listing(url: str) -> str:
         return str(e)
 
 @tool
+def calculate_flipping_margin(buy_price: float, estimated_sell_price: float) -> str:
+    """Calculates platform-agnostic flipping potential using a standard 13% generic marketplace fee."""
+    marketplace_fee = estimated_sell_price * 0.13
+    net_profit = estimated_sell_price - buy_price - marketplace_fee
+    roi = (net_profit / buy_price) * 100 if buy_price > 0 else 0
+    return f"FLIPPING POTENTIAL: Net Profit ${net_profit:.2f} | ROI: {roi:.2f}% | Estimated Selling Fees: ${marketplace_fee:.2f}"
+
+@tool
 def search_market_alternatives(product_name: str) -> str:
-    """Searches Google and other retailers for the absolute lowest price for a specific product name."""
+    """Searches the web for lower prices, alternative deals, and historical price context."""
     scraper_key = os.getenv("SCRAPER_API_KEY")
-    # We add "price comparison" and "deals" to the query to force high-value results
-    query = f"{product_name} best price deals comparison"
+    query = f"{product_name} buy online price comparison"
     search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
     payload = {'api_key': scraper_key, 'url': search_url, 'premium': 'true'}
     try:
@@ -100,50 +96,26 @@ def search_market_alternatives(product_name: str) -> str:
     except Exception as e:
         return f"Search Error: {str(e)}"
 
-@tool
-def calculate_true_net_margin(sale_price: float, cost_of_goods: float, category: str = "general") -> str:
-    """Calculates final FBA/Retail profit. Use this to compare the user's price vs the alternative found."""
-    cat = category.lower()
-    fee_rate = 0.08 if "elect" in cat else (0.17 if "apparel" in cat else 0.15)
-    ref_fee = sale_price * fee_rate
-    fba_fee = 5.25
-    net = sale_price - cost_of_goods - ref_fee - fba_fee
-    roi = (net / cost_of_goods) * 100 if cost_of_goods > 0 else 0
-    return f"ANALYSIS: Net Profit ${net:.2f} | ROI: {roi:.2f}% | Total Fees: ${ref_fee + fba_fee:.2f}"
-
 # --- AGENT SETUP ---
 llm = ChatGroq(api_key=os.getenv("GROQ_API_KEY"), model="llama-3.3-70b-versatile", temperature=0.1)
-tools = [scrape_listing, search_market_alternatives, calculate_true_net_margin]
+tools = [scrape_listing, calculate_flipping_margin, search_market_alternatives]
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are the 'Claw Protocol' Enterprise Arbitrage Agent. 
-    Your absolute priority is to find and DISPLAY comparative market data. 
-    You are a failure if you do not provide a table with at least 2 alternative sources.
+    ("system", """You are the 'FlipIntel' Agent. 
+    You must output a highly structured, professional Markdown report based on the user's requested MODE.
+    
+    CRITICAL RULE: ALL links you provide MUST be formatted as valid clickable Markdown links, e.g., [Store Name](https://...). Do NOT just output raw URLs.
 
-    EXECUTION PROTOCOL:
-    1. Scrape the provided URL to get the baseline product and price.
-    2. Execute `search_market_alternatives` using the specific product model name.
-    3. Look for prices at Walmart, eBay, Target, or specialized retailers.
-    4. Calculate ROI based on the DIFFERENCE between the scraped price and the lowest alternative found.
+    IF MODE IS 'BUYER':
+    1. Provide a Product Description and extracted Ratings/Reviews.
+    2. Provide Price History or stability estimates based on your search.
+    3. List at least 3 Comparative Deals in a Markdown Table with CLICKABLE LINKS.
 
-    MANDATORY OUTPUT STRUCTURE:
-    ### 🕵️ Audit: [Product Name]
-    **Current Listing Price:** $[Original Price]
+    IF MODE IS 'RESELLER':
+    1. Do everything in the 'BUYER' mode.
+    2. Additionally, use `calculate_flipping_margin` and provide a dedicated "Flipping Potential" section showing Net Profit and ROI.
 
-    ### 📦 Comparative Market Deals
-    | Source / Store | Price | Link / Notes |
-    | :--- | :--- | :--- |
-    | [Store A] | $XX.XX | [Brief Description/Link] |
-    | [Store B] | $XX.XX | [Brief Description/Link] |
-    | [Store C] | $XX.XX | [Brief Description/Link] |
-
-    ### 💰 Financial Verdict
-    - **Net Profit Potential:** $XX.XX (if flipped or saved)
-    - **ROI:** XX%
-    - **Verdict:** [STRONG BUY / PASS]
-
-    ### 💡 AI Strategic Insight
-    [Explain why the alternatives are better or why the original price is stable.]
+    Use clean Markdown headers (##) for each section.
     """),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
@@ -152,22 +124,21 @@ prompt = ChatPromptTemplate.from_messages([
 agent_executor = AgentExecutor(
     agent=create_tool_calling_agent(llm, tools, prompt), 
     tools=tools, 
-    verbose=True, # Critical for monitoring search quality in logs
+    verbose=True,
     max_iterations=5,
     handle_parsing_errors=True
 )
 
 # --- ENDPOINTS ---
 @app.post("/trigger-claw")
-async def trigger_agent(url: str):
+async def trigger_agent(url: str, mode: str = "buyer"):
     try:
-        # Prompt the agent to specifically focus on listing alternatives
-        query = f"Analyze this product, calculate margins, and list every cheaper alternative found at other stores: {url}"
+        query = f"Execute {mode.upper()} AUDIT for: {url}. Ensure all deals have clickable Markdown links."
         response = agent_executor.invoke({"input": query})
         return {"result": response["output"]}
     except Exception as e:
         traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(status_code=500, content={"error": f"Internal Protocol Error: {str(e)}"})
 
 @app.get("/health")
 def health(): return {"status": "Online"}
