@@ -1,228 +1,423 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>The Claw Protocol | High-Yield Arbitrage Intelligence</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlipIntel — Deal Intelligence Protocol</title>
 
-  <style>
-    :root {
-      --bg-deep: #020617;
-      --accent-glow: #0ea5e9;
-      --accent-soft: #38bdf8;
-      --glass: rgba(255, 255, 255, 0.03);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --radius-xl: 24px;
-      --radius-lg: 16px;
-      --success: #10b981;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
-    
-    body {
-      background-color: var(--bg-deep);
-      color: var(--text-primary);
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      line-height: 1.6;
-      background-image: 
-        radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.1) 0%, transparent 40%);
-      min-height: 100vh;
-    }
+<style>
+:root{
+  --bg:#0f172a;
+  --panel:#111827;
+  --panel-light:#1f2937;
+  --accent:#6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.3);
+  --success:#22c55e;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --border: rgba(255, 255, 255, 0.08);
+}
 
-    /* --- NAVIGATION --- */
-    nav {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 24px 8%;
-      backdrop-filter: blur(20px);
-      position: sticky; top: 0; z-index: 1000;
-      border-bottom: 1px solid var(--glass-border);
-    }
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',sans-serif;
+  background-color: var(--bg);
+  background-image: 
+    radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(34, 197, 94, 0.1) 0%, transparent 40%);
+  color:var(--text);
+  min-height: 100vh;
+}
 
-    .brand { font-weight: 800; font-size: 20px; letter-spacing: -1px; background: linear-gradient(90deg, #fff, var(--accent-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .nav-links { display: flex; gap: 40px; background: var(--glass); padding: 8px 24px; border-radius: 100px; border: 1px solid var(--glass-border); }
-    .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.3s; }
-    .nav-links a.active { color: var(--accent-glow); }
+/* NAVIGATION */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 8%;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+.brand { font-weight: 700; font-size: 20px; color: #fff; letter-spacing: -1px; }
+.nav-links { display: flex; gap: 20px; }
+.nav-link { 
+  color: var(--muted); 
+  text-decoration: none; 
+  font-size: 14px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  transition: 0.3s; 
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+.nav-link.active { color: #fff; background: var(--panel-light); }
 
-    /* --- PAGE MANAGEMENT --- */
-    .page { display: none; padding: 60px 5%; animation: slideUp 0.5s ease-out; }
-    .page.active { display: block; }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+/* HERO */
+.hero{
+  text-align:center;
+  padding:60px 20px 20px;
+}
+.hero h1{
+  font-size:48px;
+  font-weight:800;
+  background: linear-gradient(to bottom right, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero p{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:18px;
+}
 
-    /* --- HERO --- */
-    .hero { text-align: center; padding: 100px 5% 60px; }
-    .hero h1 { font-size: clamp(3rem, 8vw, 4.5rem); line-height: 1; margin-bottom: 30px; letter-spacing: -2px; }
-    .hero p { font-size: 1.2rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto 40px; }
+/* INPUT SECTION */
+.search-box{
+  max-width:800px;
+  margin:30px auto;
+  background:var(--panel);
+  padding:24px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
 
-    /* --- TERMINAL GRID --- */
-    .terminal-grid { display: grid; grid-template-columns: 1fr 380px; gap: 30px; max-width: 1200px; margin: 0 auto; }
-    .input-wrapper { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: 12px; display: flex; gap: 12px; margin-bottom: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-    input { flex: 1; background: transparent; border: none; padding: 16px 24px; color: #fff; font-size: 16px; outline: none; font-family: 'Plus Jakarta Sans'; }
-    .btn-action { background: var(--accent-glow); color: #000; border: none; padding: 12px 32px; border-radius: 18px; font-weight: 700; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3); }
-    .output-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); min-height: 500px; padding: 40px; backdrop-filter: blur(10px); }
+.mode-toggle{
+  display:flex;
+  justify-content:center;
+  margin-bottom:20px;
+  background: #0b1220;
+  padding: 5px;
+  border-radius: 12px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+.mode-toggle button{
+  padding:10px 24px;
+  border:none;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+.mode-toggle button.active{
+  background:var(--accent);
+  color:white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
 
-    /* --- ROI PANEL --- */
-    .roi-panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: 30px; height: fit-content; position: sticky; top: 120px; }
-    .roi-stat { margin-bottom: 25px; }
-    .roi-label { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px; margin-bottom: 8px; display: block; }
-    .roi-value { font-size: 24px; font-weight: 800; color: #fff; }
-    .roi-value.plus { color: var(--success); }
+.input-group{
+  display:flex;
+  gap:12px;
+}
+input{
+  flex:1;
+  padding:14px 18px;
+  border-radius:12px;
+  border:1px solid var(--panel-light);
+  background:#0b1220;
+  color:var(--text);
+  font-size: 16px;
+  outline: none;
+}
+input:focus { border-color: var(--accent); }
 
-    /* --- DOCS LAYOUT --- */
-    .docs-layout { display: grid; grid-template-columns: 260px 1fr; gap: 60px; max-width: 1200px; margin: 0 auto; }
-    .docs-nav { position: sticky; top: 120px; height: fit-content; }
-    .docs-nav ul { list-style: none; }
-    .docs-nav li { margin-bottom: 15px; }
-    .docs-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; transition: 0.2s; }
-    .docs-nav a:hover { color: var(--accent-glow); }
-    .docs-body h1 { font-size: 3rem; margin-bottom: 20px; font-weight: 800; }
-    .docs-body h2 { font-size: 1.8rem; margin-top: 60px; margin-bottom: 20px; color: var(--accent-glow); border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
-    .code-box { background: #000; padding: 24px; border-radius: 16px; font-family: 'JetBrains Mono'; font-size: 13px; color: var(--accent-soft); border: 1px solid #1e293b; margin: 20px 0; }
-    
-    .security-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
-    .security-box { background: var(--glass); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border); }
+button.primary{
+  background:var(--accent);
+  border:none;
+  padding:12px 28px;
+  border-radius:12px;
+  color:white;
+  font-weight:700;
+  cursor:pointer;
+  transition: 0.3s;
+}
+button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
 
-    @media (max-width: 1000px) { .terminal-grid, .docs-layout { grid-template-columns: 1fr; } .docs-nav { display: none; } }
-  </style>
+/* DASHBOARD */
+.dashboard{
+  display:none;
+  padding:20px;
+  max-width:1200px;
+  margin:0 auto 60px;
+}
+.panels{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:24px;
+}
+.card{
+  background:var(--panel);
+  padding:24px;
+  border-radius:20px;
+  border:1px solid var(--border);
+}
+.card h3{
+  margin-bottom:20px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.metric{ margin:12px 0; font-size: 16px; }
+.metric strong { color: #fff; font-size: 18px; }
+
+/* MARGIN METER */
+.meter{
+  height:8px;
+  background:#0b1220;
+  border-radius:10px;
+  overflow:hidden;
+  margin:15px 0;
+}
+.meter-fill{
+  height:100%;
+  background:var(--success);
+  width:0%;
+  transition:width 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+}
+
+/* ALTERNATIVES */
+.alt-card{
+  background:var(--panel-light);
+  padding:16px;
+  border-radius:14px;
+  margin-bottom:12px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.ai-box{
+  margin-top:24px;
+  padding:20px;
+  background:#0b1220;
+  border-radius:16px;
+  font-size:15px;
+  color:var(--text);
+  border-left: 4px solid var(--accent);
+  line-height: 1.6;
+}
+
+/* DOCS SECTION */
+.docs-section {
+  display: none;
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+.docs-content h2 { color: var(--accent); margin: 40px 0 20px; font-size: 28px; }
+.docs-content p { color: var(--muted); line-height: 1.8; margin-bottom: 20px; }
+.code-block {
+  background: #0b1220;
+  padding: 20px;
+  border-radius: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #818cf8;
+  border: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+/* PAGES */
+.page { display: none; animation: fadeIn 0.4s ease-out; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+@media(max-width:900px){ .panels{ grid-template-columns:1fr; } }
+</style>
 </head>
+
 <body>
 
-  <nav>
-    <div class="brand">THE CLAW PROTOCOL</div>
-    <div class="nav-links">
-      <a onclick="showPage('home')" id="nav-home" class="active">Discover</a>
-      <a onclick="showPage('app')" id="nav-app">Terminal</a>
-      <a onclick="showPage('docs')" id="nav-docs">Protocol Docs</a>
-    </div>
-  </nav>
+<nav>
+  <div class="brand">FLIPINTEL PRO</div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="showPage('terminal')" id="link-terminal">Terminal</div>
+    <div class="nav-link" onclick="showPage('docs')" id="link-docs">Protocol Docs</div>
+  </div>
+</nav>
 
-  <section id="home" class="page active">
-    <div class="hero">
-      <div style="display: inline-block; padding: 6px 16px; background: rgba(14, 165, 233, 0.1); border: 1px solid var(--accent-glow); border-radius: 100px; color: var(--accent-glow); font-size: 12px; margin-bottom: 20px; font-weight: 700;">PROFIT MAXIMIZATION ENGINE</div>
-      <h1>Turn Every Buy <br>Into a Victory.</h1>
-      <p>The elite ecommerce tool for resellers and savvy shoppers. We process raw market noise into high-fidelity financial signals.</p>
-      <button class="btn-action" style="padding: 20px 50px; border-radius: 100px;" onclick="showPage('app')">Access The Protocol</button>
-    </div>
+<main id="terminal-page" class="page active">
+  <section class="hero">
+    <h1>Find Better Deals. Flip Smarter.</h1>
+    <p>AI-powered arbitrage intelligence for shoppers and resellers.</p>
   </section>
 
-  <section id="app" class="page">
-    <div class="terminal-grid">
-      <main>
-        <div class="input-wrapper">
-          <input id="url-input" placeholder="Paste Amazon, Walmart, or eBay product link..." />
-          <button class="btn-action" onclick="executeProtocol()">Execute</button>
+  <div class="search-box">
+    <div class="mode-toggle">
+      <button id="buyerMode" class="active">🛒 Buyer</button>
+      <button id="resellerMode">📦 Reseller</button>
+    </div>
+
+    <div class="input-group">
+      <input id="productInput" placeholder="Paste Amazon URL or type product name..." />
+      <button class="primary" onclick="analyze()">Analyze</button>
+    </div>
+  </div>
+
+  <section class="dashboard" id="dashboard">
+    <div class="panels">
+      <div class="card">
+        <h3>Original Product</h3>
+        <div class="metric">Name: <strong id="origName">—</strong></div>
+        <div class="metric">Price: <strong id="origPrice">$0.00</strong></div>
+        <div class="metric">Status: <span class="success" style="font-weight: 600;">Active Signal</span></div>
+      </div>
+
+      <div class="card">
+        <h3>Financial Breakdown</h3>
+        <div class="metric" id="profitLabel">Net Profit:</div>
+        <strong id="netProfit" style="font-size: 24px; display: block; margin-bottom: 10px;">$0.00</strong>
+        <div class="metric">Yield/Savings: <strong id="marginPercent">0%</strong></div>
+
+        <div class="meter">
+          <div class="meter-fill" id="marginMeter"></div>
         </div>
-        <div id="output" class="output-card">
-          <div style="text-align: center; padding-top: 150px; color: var(--text-secondary);">
-            <div style="font-size: 40px; margin-bottom: 20px; opacity: 0.3;">✦</div>
-            <p>System Ready. Provide a marketplace signal to begin real-time analysis.</p>
+        <div class="metric" id="scoreLabel">Flip Score: <strong id="flipScore">0 / 100</strong></div>
+      </div>
+
+      <div class="card">
+        <h3>Better Alternatives</h3>
+        <div id="alternatives">
+          <div style="color: var(--muted); font-size: 14px; text-align: center; padding: 20px;">
+            Awaiting signal scan...
           </div>
         </div>
-      </main>
+      </div>
+    </div>
 
-      <aside class="roi-panel">
-        <h3 style="font-size: 13px; margin-bottom: 30px; letter-spacing: 2px; color: var(--text-secondary);">YIELD ESTIMATION</h3>
-        <div class="roi-stat">
-          <span class="roi-label">Cost Basis</span>
-          <div class="roi-value" id="buy-price">$0.00</div>
-        </div>
-        <div class="roi-stat">
-          <span class="roi-label">Market Value</span>
-          <div class="roi-value" id="market-price">$0.00</div>
-        </div>
-        <div class="roi-stat" style="padding-top: 20px; border-top: 1px solid var(--glass-border);">
-          <span class="roi-label">Net Profit (Projected)</span>
-          <div class="roi-value plus" id="net-profit">$0.00</div>
-        </div>
-        <div class="roi-stat">
-          <span class="roi-label">Inference Confidence</span>
-          <div class="roi-value" id="confidence" style="font-size: 14px; color: var(--accent-glow);">--</div>
-        </div>
-      </aside>
+    <div class="ai-box" id="aiInsight">
+      Awaiting ingestion...
     </div>
   </section>
+</main>
 
-  <section id="docs" class="page">
-    <div class="docs-layout">
-      <aside class="docs-nav">
-        <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-secondary); margin-bottom: 20px;">Section Index</h3>
-        <ul>
-          <li><a href="#vision">01 Mission & Use Case</a></li>
-          <li><a href="#arch">02 Architecture</a></li>
-          <li><a href="#sec">03 Hardened Security</a></li>
-        </ul>
-      </aside>
+<main id="docs-page" class="page">
+  <div class="docs-section" style="display: block;">
+    <div class="docs-content">
+      <h1>The Claw Protocol Specification</h1>
+      <p>FlipIntel operates on the <strong>Claw Protocol</strong>, an agentic framework designed to bypass retail data obfuscation and provide high-fidelity financial insights.</p>
+      
+      
+      
+      <h2>Core Architecture</h2>
+      <p>The system utilizes a multi-stage reasoning loop to validate product viability:</p>
+      <div class="code-block">
+1. Ingestion: Rotating residential proxies bypass anti-bot shields.
+2. Extraction: Llama-3.3-70B identifies entities, prices, and fees.
+3. Comparison: Real-time floor price retrieval from 5+ marketplaces.
+4. Valuation: Category-specific ROI modeling (Electronics: 8%, Apparel: 17%).
+      </div>
 
-      <main class="docs-body">
-        <h1 id="vision">Protocol Intelligence</h1>
-        <p>The Claw Protocol is a decision-support system built for the high-velocity ecommerce market. It serves two distinct personas:</p>
-        <p><strong>The Professional Reseller:</strong> Needs to validate 1,000+ potential flips per day with surgical precision regarding fees and margins.</p>
-        <p><strong>The Power Shopper:</strong> Demands the true price floor and historical stability of an item to ensure they never pay retail markup again.</p>
+      <h2>Operational Modes</h2>
+      <p><strong>Buyer Mode:</strong> Optimized for consumer savings. Focuses on the "Best Price" regardless of shipping speed or seller type.</p>
+      <p><strong>Reseller Mode:</strong> Optimized for Arbitrage. Deducts FBA fees, referral commissions, and inbound shipping costs to reveal true net profit.</p>
 
-        <h2 id="arch">Architecture & Cognitive Stack</h2>
-        <p>By leveraging Llama-3.3-70B via the Groq LPU inference engine, we achieve reasoning speeds that make traditional scrapers obsolete.</p>
-        <div class="code-box">
-- COGNITION: Llama-3.3-70B Agentic Core
-- INGESTION: ScraperAPI Residential Proxy Tunnel
-- BACKEND: FastAPI (Python) Asynchronous Hub
-        </div>
-
-        <h2 id="sec">Hardened Security & Privacy</h2>
-        <p>Your search data is your competitive edge. The Protocol utilizes a Zero-Knowledge approach to your "Alpha."</p>
-        <div class="security-grid">
-          <div class="security-box">
-            <h4 style="color: var(--accent-glow); margin-bottom: 10px;">Data Integrity</h4>
-            <p style="font-size: 13px; color: var(--text-secondary);">AES-256 encryption at rest. We never store marketplace URLs or results after the session concludes.</p>
-          </div>
-          <div class="security-box">
-            <h4 style="color: var(--accent-glow); margin-bottom: 10px;">Stealth Ingestion</h4>
-            <p style="font-size: 13px; color: var(--text-secondary);">Mimics human dwell-time and erratic movement to bypass Tier-1 anti-bot firewalls.</p>
-          </div>
-        </div>
-      </main>
+      <h2>Security & Privacy</h2>
+      <p>We employ <strong>Zero-Persistence Scanning</strong>. Your search queries and URLs are processed in volatile memory and purged immediately after the AI Insight is generated. Your "Alpha" stays yours.</p>
     </div>
-  </section>
+  </div>
+</main>
 
-  <script>
-    function showPage(id) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      document.getElementById('nav-' + id).classList.add('active');
-      window.scrollTo(0,0);
+<script>
+let mode = "buyer";
+
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  
+  if(pageId === 'terminal') {
+    document.getElementById('terminal-page').classList.add('active');
+    document.getElementById('link-terminal').classList.add('active');
+  } else {
+    document.getElementById('docs-page').classList.add('active');
+    document.getElementById('link-docs').classList.add('active');
+  }
+}
+
+document.getElementById("buyerMode").onclick = () => {
+  mode="buyer";
+  toggleMode("buyerMode","resellerMode");
+  document.getElementById("profitLabel").innerText = "Estimated Savings:";
+  document.getElementById("scoreLabel").style.opacity = "0.5";
+};
+document.getElementById("resellerMode").onclick = () => {
+  mode="reseller";
+  toggleMode("resellerMode","buyerMode");
+  document.getElementById("profitLabel").innerText = "Net Profit:";
+  document.getElementById("scoreLabel").style.opacity = "1";
+};
+
+function toggleMode(active,inactive){
+  document.getElementById(active).classList.add("active");
+  document.getElementById(inactive).classList.remove("active");
+}
+
+async function analyze(){
+  const btn = document.querySelector(".primary");
+  const input = document.getElementById("productInput").value;
+  if(!input) return alert("Enter a product URL or name.");
+
+  btn.innerText = "Analyzing...";
+  btn.disabled = true;
+
+  // Simulate API Delay
+  setTimeout(() => {
+    document.getElementById("dashboard").style.display="block";
+    btn.innerText = "Analyze";
+    btn.disabled = false;
+
+    document.getElementById("origName").innerText= input.length > 20 ? "Target Product Scan" : input;
+    document.getElementById("origPrice").innerText="$45.99";
+
+    if(mode==="reseller"){
+      document.getElementById("netProfit").innerText="$12.40";
+      document.getElementById("netProfit").style.color="var(--success)";
+      document.getElementById("marginPercent").innerText="27%";
+      document.getElementById("flipScore").innerText="84 / 100";
+      document.getElementById("marginMeter").style.width="70%";
+    } else {
+      document.getElementById("netProfit").innerText="$9.20 Saved";
+      document.getElementById("netProfit").style.color="var(--accent)";
+      document.getElementById("marginPercent").innerText="20% Savings";
+      document.getElementById("flipScore").innerText="N/A";
+      document.getElementById("marginMeter").style.width="50%";
     }
 
-    async function executeProtocol() {
-      const btn = document.querySelector('.btn-action');
-      const out = document.getElementById('output');
-      const input = document.getElementById('url-input').value;
+    document.getElementById("alternatives").innerHTML=`
+      <div class="alt-card">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Walmart Alternative</span>
+          <strong style="color:var(--success)">$36.99</strong>
+        </div>
+      </div>
+      <div class="alt-card">
+        <div style="display:flex; justify-content:space-between;">
+          <span>eBay Certified Refurb</span>
+          <strong style="color:var(--success)">$32.49</strong>
+        </div>
+      </div>
+    `;
 
-      if(!input) return;
+    document.getElementById("aiInsight").innerHTML= `
+      <strong>Protocol Insight:</strong><br>
+      The Claw detected a 14% price discrepancy between Amazon and local distributors. 
+      90-day stability is <span class="success">High</span>. FBA competition is <span class="warning">Moderate</span>.
+      Recommendation: <strong>${mode === 'reseller' ? 'Execute Flip' : 'Purchase via Walmart'}</strong>.
+    `;
+  }, 1200);
+}
+</script>
 
-      btn.innerText = "THINKING...";
-      btn.disabled = true;
-      out.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; opacity:0.6;">
-        <p style="font-family:'JetBrains Mono'; color:var(--accent-soft);">[PROTOCOL] INGESTING SIGNAL...</p>
-      </div>`;
-
-      // Simulation for the investment-grade UI
-      setTimeout(() => {
-        document.getElementById('buy-price').innerText = "$149.99";
-        document.getElementById('market-price').innerText = "$235.00";
-        document.getElementById('net-profit').innerText = "+$54.20";
-        document.getElementById('confidence').innerText = "96.8% MATCH";
-        out.innerHTML = `<h3>Signal Analysis Result</h3><p>Semantic scan complete. Item identified as <strong>High-Velocity Electronic</strong>. Walmart provides the current market ceiling at $235.00. Referral fees calculated at 15%.</p>`;
-        btn.innerText = "EXECUTE";
-        btn.disabled = false;
-      }, 1500);
-    }
-  </script>
 </body>
 </html>
