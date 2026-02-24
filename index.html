@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FlipIntel — Deal Intelligence Protocol</title>
+<title>FlipIntel PRO — Deal Intelligence</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -25,215 +26,105 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:'Inter',sans-serif;
-  background-color: var(--bg);
-  background-image: 
-    radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(34, 197, 94, 0.1) 0%, transparent 40%);
+  background:linear-gradient(145deg,#0f172a,#111827);
   color:var(--text);
   min-height: 100vh;
 }
 
 /* NAVIGATION */
 nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 8%;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 8%; background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 1000;
 }
 .brand { font-weight: 700; font-size: 20px; color: #fff; letter-spacing: -1px; }
 .nav-links { display: flex; gap: 20px; }
 .nav-link { 
-  color: var(--muted); 
-  text-decoration: none; 
-  font-size: 14px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  transition: 0.3s; 
-  padding: 8px 16px;
-  border-radius: 8px;
+  color: var(--muted); text-decoration: none; font-size: 14px; 
+  font-weight: 600; cursor: pointer; transition: 0.3s; 
+  padding: 8px 16px; border-radius: 8px;
 }
 .nav-link.active { color: #fff; background: var(--panel-light); }
 
 /* HERO */
-.hero{
-  text-align:center;
-  padding:60px 20px 20px;
-}
-.hero h1{
-  font-size:48px;
-  font-weight:800;
-  background: linear-gradient(to bottom right, #fff, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.hero p{
-  margin-top:10px;
-  color:var(--muted);
-  font-size:18px;
-}
+.hero{ text-align:center; padding:60px 20px 20px; }
+.hero h1{ font-size:44px; font-weight:700; }
+.hero p{ margin-top:15px; color:var(--muted); font-size:18px; }
 
 /* INPUT SECTION */
 .search-box{
-  max-width:800px;
-  margin:30px auto;
-  background:var(--panel);
-  padding:24px;
-  border-radius:20px;
-  border:1px solid var(--border);
+  max-width:800px; margin:30px auto; background:var(--panel);
+  padding:24px; border-radius:16px; border:1px solid var(--border);
   box-shadow: 0 20px 50px rgba(0,0,0,0.3);
 }
 
 .mode-toggle{
-  display:flex;
-  justify-content:center;
-  margin-bottom:20px;
-  background: #0b1220;
-  padding: 5px;
-  border-radius: 12px;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
+  display:flex; justify-content:center; margin-bottom:20px;
+  background: #0b1220; padding: 5px; border-radius: 12px;
+  width: fit-content; margin: 0 auto 20px auto;
 }
 .mode-toggle button{
-  padding:10px 24px;
-  border:none;
-  background:transparent;
-  color:var(--muted);
-  cursor:pointer;
-  border-radius: 10px;
-  font-weight: 600;
-  transition: 0.3s;
+  padding:10px 24px; border:none; background:transparent;
+  color:var(--muted); cursor:pointer; border-radius: 10px;
+  font-weight: 600; transition: 0.3s;
 }
 .mode-toggle button.active{
-  background:var(--accent);
-  color:white;
+  background:var(--accent); color:white;
   box-shadow: 0 4px 12px var(--accent-glow);
 }
 
-.input-group{
-  display:flex;
-  gap:12px;
-}
+.input-group{ display:flex; gap:12px; }
 input{
-  flex:1;
-  padding:14px 18px;
-  border-radius:12px;
-  border:1px solid var(--panel-light);
-  background:#0b1220;
-  color:var(--text);
-  font-size: 16px;
-  outline: none;
+  flex:1; padding:14px 18px; border-radius:12px;
+  border:1px solid var(--panel-light); background:#0b1220;
+  color:var(--text); font-size: 16px; outline: none;
 }
 input:focus { border-color: var(--accent); }
-
 button.primary{
-  background:var(--accent);
-  border:none;
-  padding:12px 28px;
-  border-radius:12px;
-  color:white;
-  font-weight:700;
-  cursor:pointer;
-  transition: 0.3s;
+  background:var(--accent); border:none; padding:12px 28px;
+  border-radius:12px; color:white; font-weight:700;
+  cursor:pointer; transition: 0.3s;
 }
 button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* DASHBOARD */
+/* DYNAMIC AI DASHBOARD */
 .dashboard{
-  display:none;
-  padding:20px;
-  max-width:1200px;
-  margin:0 auto 60px;
+  display:none; padding:20px; max-width:1000px; margin:0 auto 60px;
 }
-.panels{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:24px;
-}
-.card{
-  background:var(--panel);
-  padding:24px;
-  border-radius:20px;
-  border:1px solid var(--border);
-}
-.card h3{
-  margin-bottom:20px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-}
-.metric{ margin:12px 0; font-size: 16px; }
-.metric strong { color: #fff; font-size: 18px; }
-
-/* MARGIN METER */
-.meter{
-  height:8px;
-  background:#0b1220;
-  border-radius:10px;
-  overflow:hidden;
-  margin:15px 0;
-}
-.meter-fill{
-  height:100%;
-  background:var(--success);
-  width:0%;
-  transition:width 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+.ai-report {
+  background: var(--panel); padding: 40px; border-radius: 20px;
+  border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  line-height: 1.7; font-size: 15px;
 }
 
-/* ALTERNATIVES */
-.alt-card{
-  background:var(--panel-light);
-  padding:16px;
-  border-radius:14px;
-  margin-bottom:12px;
-  border: 1px solid var(--border);
-  font-size: 14px;
+/* MARKDOWN STYLING FOR AI REPORT */
+.ai-report h2 { color: var(--accent); margin: 30px 0 15px; border-bottom: 1px solid var(--panel-light); padding-bottom: 10px; font-size: 22px; }
+.ai-report h2:first-child { margin-top: 0; }
+.ai-report h3 { color: #fff; margin: 20px 0 10px; font-size: 18px; }
+.ai-report p { margin-bottom: 15px; color: var(--text); }
+.ai-report strong { color: #fff; }
+.ai-report ul { margin-left: 20px; margin-bottom: 15px; color: var(--muted); }
+.ai-report li { margin-bottom: 8px; }
+.ai-report a { 
+  color: var(--accent); text-decoration: none; font-weight: 600; 
+  background: rgba(99, 102, 241, 0.1); padding: 2px 6px; border-radius: 4px;
 }
-
-.ai-box{
-  margin-top:24px;
-  padding:20px;
-  background:#0b1220;
-  border-radius:16px;
-  font-size:15px;
-  color:var(--text);
-  border-left: 4px solid var(--accent);
-  line-height: 1.6;
-}
+.ai-report a:hover { background: var(--accent); color: #fff; }
+.ai-report table { width: 100%; border-collapse: collapse; margin: 20px 0; background: var(--panel-light); border-radius: 8px; overflow: hidden; }
+.ai-report th, .ai-report td { padding: 14px; border: 1px solid var(--border); text-align: left; }
+.ai-report th { background: #0b1220; color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
 
 /* DOCS SECTION */
-.docs-section {
-  display: none;
-  max-width: 900px;
-  margin: 60px auto;
-  padding: 0 20px;
-}
-.docs-content h2 { color: var(--accent); margin: 40px 0 20px; font-size: 28px; }
+.docs-section { display: none; max-width: 900px; margin: 60px auto; padding: 0 20px; }
+.docs-content h2 { color: var(--accent); margin: 40px 0 20px; font-size: 24px; }
 .docs-content p { color: var(--muted); line-height: 1.8; margin-bottom: 20px; }
-.code-block {
-  background: #0b1220;
-  padding: 20px;
-  border-radius: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: #818cf8;
-  border: 1px solid var(--border);
-  margin: 20px 0;
-}
 
 /* PAGES */
 .page { display: none; animation: fadeIn 0.4s ease-out; }
 .page.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-@media(max-width:900px){ .panels{ grid-template-columns:1fr; } }
 </style>
 </head>
 
@@ -260,45 +151,14 @@ button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(-
     </div>
 
     <div class="input-group">
-      <input id="productInput" placeholder="Paste Amazon URL or type product name..." />
+      <input id="productInput" placeholder="Paste product URL or type product name..." autocomplete="off" />
       <button class="primary" onclick="analyze()">Analyze</button>
     </div>
   </div>
 
   <section class="dashboard" id="dashboard">
-    <div class="panels">
-      <div class="card">
-        <h3>Original Product</h3>
-        <div class="metric">Name: <strong id="origName">—</strong></div>
-        <div class="metric">Price: <strong id="origPrice">$0.00</strong></div>
-        <div class="metric">Status: <span class="success" style="font-weight: 600;">Active Signal</span></div>
+    <div class="ai-report" id="dashboard-content">
       </div>
-
-      <div class="card">
-        <h3>Financial Breakdown</h3>
-        <div class="metric" id="profitLabel">Net Profit:</div>
-        <strong id="netProfit" style="font-size: 24px; display: block; margin-bottom: 10px;">$0.00</strong>
-        <div class="metric">Yield/Savings: <strong id="marginPercent">0%</strong></div>
-
-        <div class="meter">
-          <div class="meter-fill" id="marginMeter"></div>
-        </div>
-        <div class="metric" id="scoreLabel">Flip Score: <strong id="flipScore">0 / 100</strong></div>
-      </div>
-
-      <div class="card">
-        <h3>Better Alternatives</h3>
-        <div id="alternatives">
-          <div style="color: var(--muted); font-size: 14px; text-align: center; padding: 20px;">
-            Awaiting signal scan...
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="ai-box" id="aiInsight">
-      Awaiting ingestion...
-    </div>
   </section>
 </main>
 
@@ -308,23 +168,9 @@ button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(-
       <h1>The Claw Protocol Specification</h1>
       <p>FlipIntel operates on the <strong>Claw Protocol</strong>, an agentic framework designed to bypass retail data obfuscation and provide high-fidelity financial insights.</p>
       
-      
-      
-      <h2>Core Architecture</h2>
-      <p>The system utilizes a multi-stage reasoning loop to validate product viability:</p>
-      <div class="code-block">
-1. Ingestion: Rotating residential proxies bypass anti-bot shields.
-2. Extraction: Llama-3.3-70B identifies entities, prices, and fees.
-3. Comparison: Real-time floor price retrieval from 5+ marketplaces.
-4. Valuation: Category-specific ROI modeling (Electronics: 8%, Apparel: 17%).
-      </div>
-
       <h2>Operational Modes</h2>
-      <p><strong>Buyer Mode:</strong> Optimized for consumer savings. Focuses on the "Best Price" regardless of shipping speed or seller type.</p>
-      <p><strong>Reseller Mode:</strong> Optimized for Arbitrage. Deducts FBA fees, referral commissions, and inbound shipping costs to reveal true net profit.</p>
-
-      <h2>Security & Privacy</h2>
-      <p>We employ <strong>Zero-Persistence Scanning</strong>. Your search queries and URLs are processed in volatile memory and purged immediately after the AI Insight is generated. Your "Alpha" stays yours.</p>
+      <p><strong>Buyer Mode:</strong> Optimized for consumer savings. Retrieves Product Descriptions, Ratings, Price History, and the Best Alternative Deals via clickable links.</p>
+      <p><strong>Reseller Mode:</strong> Optimized for Arbitrage. Executes all Buyer functions, but adds a Valuation calculation to reveal true Net Profit and ROI based on generic marketplace fees.</p>
     </div>
   </div>
 </main>
@@ -332,6 +178,7 @@ button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(-
 <script>
 let mode = "buyer";
 
+// Navigation Logic
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -345,77 +192,61 @@ function showPage(pageId) {
   }
 }
 
+// Mode Toggle Logic
 document.getElementById("buyerMode").onclick = () => {
-  mode="buyer";
-  toggleMode("buyerMode","resellerMode");
-  document.getElementById("profitLabel").innerText = "Estimated Savings:";
-  document.getElementById("scoreLabel").style.opacity = "0.5";
+  mode = "buyer";
+  document.getElementById("buyerMode").classList.add("active");
+  document.getElementById("resellerMode").classList.remove("active");
 };
+
 document.getElementById("resellerMode").onclick = () => {
-  mode="reseller";
-  toggleMode("resellerMode","buyerMode");
-  document.getElementById("profitLabel").innerText = "Net Profit:";
-  document.getElementById("scoreLabel").style.opacity = "1";
+  mode = "reseller";
+  document.getElementById("resellerMode").classList.add("active");
+  document.getElementById("buyerMode").classList.remove("active");
 };
 
-function toggleMode(active,inactive){
-  document.getElementById(active).classList.add("active");
-  document.getElementById(inactive).classList.remove("active");
-}
-
-async function analyze(){
+// Analysis Execution Logic
+async function analyze() {
   const btn = document.querySelector(".primary");
-  const input = document.getElementById("productInput").value;
+  const input = document.getElementById("productInput").value.trim();
   if(!input) return alert("Enter a product URL or name.");
 
+  // UI Loading State
   btn.innerText = "Analyzing...";
   btn.disabled = true;
+  const dashboard = document.getElementById("dashboard");
+  const contentArea = document.getElementById("dashboard-content");
+  
+  dashboard.style.display = "block";
+  contentArea.innerHTML = `
+    <div style="text-align: center; color: var(--muted); padding: 40px;">
+      <div style="font-size: 24px; margin-bottom: 15px;">⚙️</div>
+      Protocol Active: Ingesting Data & Reasoning...<br>
+      <span style="font-size: 12px; opacity: 0.7;">(This takes 10-20 seconds for deep web scans)</span>
+    </div>
+  `;
 
-  // Simulate API Delay
-  setTimeout(() => {
-    document.getElementById("dashboard").style.display="block";
+  try {
+    // REAL BACKEND FETCH
+    const response = await fetch(`/trigger-claw?url=${encodeURIComponent(input)}&mode=${mode}`, { method: 'POST' });
+    const data = await response.json();
+    
+    if (data.error) throw new Error(data.error);
+
+    // Render Markdown beautifully
+    contentArea.innerHTML = marked.parse(data.result);
+
+  } catch (error) {
+    contentArea.innerHTML = `
+      <div style="color: var(--danger); text-align: center; padding: 20px;">
+        <strong>Error Executing Scan:</strong><br>
+        ${error.message}
+      </div>
+    `;
+  } finally {
     btn.innerText = "Analyze";
     btn.disabled = false;
-
-    document.getElementById("origName").innerText= input.length > 20 ? "Target Product Scan" : input;
-    document.getElementById("origPrice").innerText="$45.99";
-
-    if(mode==="reseller"){
-      document.getElementById("netProfit").innerText="$12.40";
-      document.getElementById("netProfit").style.color="var(--success)";
-      document.getElementById("marginPercent").innerText="27%";
-      document.getElementById("flipScore").innerText="84 / 100";
-      document.getElementById("marginMeter").style.width="70%";
-    } else {
-      document.getElementById("netProfit").innerText="$9.20 Saved";
-      document.getElementById("netProfit").style.color="var(--accent)";
-      document.getElementById("marginPercent").innerText="20% Savings";
-      document.getElementById("flipScore").innerText="N/A";
-      document.getElementById("marginMeter").style.width="50%";
-    }
-
-    document.getElementById("alternatives").innerHTML=`
-      <div class="alt-card">
-        <div style="display:flex; justify-content:space-between;">
-          <span>Walmart Alternative</span>
-          <strong style="color:var(--success)">$36.99</strong>
-        </div>
-      </div>
-      <div class="alt-card">
-        <div style="display:flex; justify-content:space-between;">
-          <span>eBay Certified Refurb</span>
-          <strong style="color:var(--success)">$32.49</strong>
-        </div>
-      </div>
-    `;
-
-    document.getElementById("aiInsight").innerHTML= `
-      <strong>Protocol Insight:</strong><br>
-      The Claw detected a 14% price discrepancy between Amazon and local distributors. 
-      90-day stability is <span class="success">High</span>. FBA competition is <span class="warning">Moderate</span>.
-      Recommendation: <strong>${mode === 'reseller' ? 'Execute Flip' : 'Purchase via Walmart'}</strong>.
-    `;
-  }, 1200);
+  }
 }
 </script>
 
